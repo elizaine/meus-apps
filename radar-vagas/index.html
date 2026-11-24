@@ -140,30 +140,73 @@
       </div>
 
       <!-- Avaliador Detalhado Vaga por Vaga -->
-      <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-sm font-bold text-white">🧠 Diagnóstico Completo: Vaga vs. Meu Currículo</h2>
-            <p class="text-xs text-slate-400">Cole a descrição de uma vaga para ver aderência, matches, gaps e o que ajustar no CV.</p>
+      <div class="lg:col-span-7 space-y-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 class="text-sm font-bold text-white">🧠 Diagnóstico Completo: Vaga vs. Meu Currículo</h2>
+              <p class="text-xs text-slate-400">Cole a vaga, salve no histórico e gere uma versão do currículo direcionada para ela.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="saveAnalyzedJob()" class="text-xs font-semibold text-emerald-300 hover:text-emerald-200 px-3 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 cursor-pointer">
+                💾 Salvar Vaga
+              </button>
+              <button onclick="clearManualEval()" class="text-xs text-slate-400 hover:text-white px-2.5 py-1 rounded-lg bg-slate-800 cursor-pointer">
+                Limpar
+              </button>
+            </div>
           </div>
-          <button onclick="clearManualEval()" class="text-xs text-slate-400 hover:text-white px-2.5 py-1 rounded-lg bg-slate-800 cursor-pointer">
-            Limpar
-          </button>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input type="text" id="evalTitle" placeholder="Cargo da vaga (ex: Product Analyst Pleno)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+            <input type="text" id="evalCompany" placeholder="Empresa (opcional)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+
+          <textarea id="evalDesc" rows="7" placeholder="Cole aqui os requisitos e responsabilidades da vaga..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 leading-relaxed"></textarea>
+          
+          <div class="flex flex-wrap items-center gap-2.5">
+            <button onclick="evaluateManualJob()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 cursor-pointer">
+              🔍 Analisar Aderência
+            </button>
+            <button onclick="generateTailoredCv()" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer">
+              ✨ Gerar Currículo para Esta Vaga
+            </button>
+          </div>
+
+          <!-- Resultado Detalhado -->
+          <div id="evalOutput" class="hidden space-y-4 pt-2"></div>
+
+          <!-- Currículo Adaptado à Vaga -->
+          <div id="tailoredCvBox" class="hidden bg-slate-950 border border-emerald-500/30 rounded-2xl p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 class="text-xs font-bold text-emerald-300">📄 Currículo Gerado para a Vaga (Editável)</h3>
+                <p class="text-[11px] text-slate-400">Ajuste o que quiser antes de copiar ou baixar para enviar.</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button onclick="copyTailoredCv()" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-white font-semibold px-2.5 py-1.5 rounded-lg cursor-pointer">
+                  📋 Copiar
+                </button>
+                <button onclick="downloadTailoredCvTxt()" class="text-[11px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-2.5 py-1.5 rounded-lg cursor-pointer">
+                  ⬇️ Baixar .TXT
+                </button>
+                <button onclick="printTailoredCv()" class="text-[11px] bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-2.5 py-1.5 rounded-lg cursor-pointer">
+                  🖨️ Salvar PDF
+                </button>
+              </div>
+            </div>
+            <textarea id="tailoredCvArea" rows="14" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 leading-relaxed"></textarea>
+          </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input type="text" id="evalTitle" placeholder="Cargo da vaga (ex: Product Analyst Pleno)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
-          <input type="text" id="evalCompany" placeholder="Empresa (opcional)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+        <!-- Histórico de Vagas Analisadas -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">🗂️ Histórico de Vagas Salvas (<span id="savedJobsCount">0</span>)</h3>
+            <span class="text-[11px] text-slate-400">Clique para reabrir</span>
+          </div>
+          <div id="savedJobsHistoryList" class="space-y-2"></div>
         </div>
-
-        <textarea id="evalDesc" rows="7" placeholder="Cole aqui os requisitos e responsabilidades da vaga..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 leading-relaxed"></textarea>
-        
-        <button onclick="evaluateManualJob()" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 cursor-pointer">
-          🔍 Analisar Aderência e Gerar Sugestões de Melhoria
-        </button>
-
-        <!-- Resultado Detalhado -->
-        <div id="evalOutput" class="hidden space-y-4 pt-2"></div>
       </div>
     </section>
 
@@ -375,8 +418,165 @@ COMPETÊNCIAS E FERRAMENTAS:
 
     async function cloudGet() {
       if (!isCloudConfigured()) return null;
-      const res = await fetch(`${CLOUD_API_URL}?token=${encodeURIComponent(CLOUD_TOKEN)}`); return await res.json(); }  async function cloudPost(payload) { if (!isCloudConfigured()) return null; await fetch(CLOUD_API_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ ...payload, token: CLOUD_TOKEN }) }); }  function safeGet(k, def) { try { const v = localStorage.getItem(k); return v !== null ? v : def; } catch (e) { return def; } } function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }  let state = { jobs: [...BRAZIL_JOBS], cvText: safeGet('liza_v4_cv_text', DEFAULT_CV), cvFile: JSON.parse(safeGet('liza_v4_cv_file', 'null')), sentJobs: JSON.parse(safeGet('liza_v4_sent', '[]')), customRss: safeGet('liza_v4_rss', ''), checklist: JSON.parse(safeGet('liza_v4_li_chk', '{}')) };  async function init() { document.getElementById('cvTextArea').value = state.cvText; document.getElementById('customRssInput').value = state.customRss; renderStoredCv(); renderSentList(); renderLinkedinTab();  if (isCloudConfigured()) { try { const data = await cloudGet(); if (data && data.ok) { if (data.config && data.config.cvText) { state.cvText = data.config.cvText; safeSet('liza_v4_cv_text', state.cvText); document.getElementById('cvTextArea').value = state.cvText; } if (data.config && typeof data.config.customRss === "string") { state.customRss = data.config.customRss; safeSet('liza_v4_rss', state.customRss); document.getElementById('customRssInput').value = state.customRss; } if (data.config && data.config.checklist) { try { state.checklist = JSON.parse(data.config.checklist); safeSet('liza_v4_li_chk', JSON.stringify(state.checklist)); renderLinkedinTab(); } catch (e) {} } if (Array.isArray(data.sentJobs)) { state.sentJobs = data.sentJobs; safeSet('liza_v4_sent', JSON.stringify(state.sentJobs)); renderSentList(); } } } catch (e) {} }  fetchBrazilJobs(); }  function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('opacity-0'); setTimeout(() => t.classList.add('opacity-0'), 3000); }  function copyText(text) { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(() => showToast('Copiado para a área de transferência!')).catch(() => fallbackCopy(text)); } else { fallbackCopy(text); } }  function fallbackCopy(text) { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('Copiado para a área de transferência!'); }  function copyAboutText() { copyText(document.getElementById('linkedinAboutText').value); }  function switchTab(tab) { ['vagas', 'cv', 'enviadas', 'linkedin'].forEach(id => { document.getElementById(`view-${id}`).classList.toggle('hidden', id !== tab);
-        const btn = document.getElementById(`tab-${id}`); if (id === tab) { btn.classList.add('border-emerald-400', 'text-emerald-400'); btn.classList.remove('border-transparent', 'text-slate-400'); } else { btn.classList.remove('border-emerald-400', 'text-emerald-400'); btn.classList.add('border-transparent', 'text-slate-400'); } }); }  function unwrapUrl(raw) { try { const u = new URL(raw); if (u.hostname.includes('google.com') && u.pathname.includes('/url')) { return u.searchParams.get('url') || u.searchParams.get('q') || raw; } } catch (e) {} return raw; }  function computeMatchScore(title, tagsOrDesc) { const text = (title + ' ' + tagsOrDesc).toLowerCase(); const cv = state.cvText.toLowerCase(); const keywords = ['negócios', 'business', 'product', 'produto', 'requisitos', 'api', 'apis', 'erp', 'integra', 'pagamento', 'crédito', 'qa', 'testes', 'bpmn', 'jira', 'scrum', 'webhook']; let hits = 0; keywords.forEach(k => { if (text.includes(k) && cv.includes(k)) hits++; }); return Math.min(98, 72 + hits * 5); }  async function fetchBrazilJobs() { const btn = document.getElementById('scanBtn'); const statusEl = document.getElementById('statusMessage'); btn.disabled = true; btn.innerHTML = '⏳ Atualizando Brasil...';  let rssJobs = [];  if (state.customRss.trim()) { const urls = state.customRss.split(/\r?\n/).map(u => u.trim()).filter(Boolean); for (const feedUrl of urls) { try { const rssRes = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`);
+      const res = await fetch(`${CLOUD_API_URL}?token=${encodeURIComponent(CLOUD_TOKEN)}`);
+      return await res.json();
+    }
+
+    async function cloudPost(payload) {
+      if (!isCloudConfigured()) return null;
+      await fetch(CLOUD_API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ ...payload, token: CLOUD_TOKEN })
+      });
+    }
+
+    function safeGet(k, def) {
+      try { const v = localStorage.getItem(k); return v !== null ? v : def; } catch (e) { return def; }
+    }
+    function safeSet(k, v) {
+      try { localStorage.setItem(k, v); } catch (e) {}
+    }
+
+    let state = {
+      jobs: [...BRAZIL_JOBS],
+      cvText: safeGet('liza_v4_cv_text', DEFAULT_CV),
+      cvFile: JSON.parse(safeGet('liza_v4_cv_file', 'null')),
+      sentJobs: JSON.parse(safeGet('liza_v4_sent', '[]')),
+      savedJobs: JSON.parse(safeGet('liza_v4_saved_jobs', '[]')),
+      customRss: safeGet('liza_v4_rss', ''),
+      checklist: JSON.parse(safeGet('liza_v4_li_chk', '{}'))
+    };
+
+    async function init() {
+      document.getElementById('cvTextArea').value = state.cvText;
+      document.getElementById('customRssInput').value = state.customRss;
+      renderStoredCv();
+      renderSentList();
+      renderSavedJobsHistory();
+      renderLinkedinTab();
+
+      if (isCloudConfigured()) {
+        try {
+          const data = await cloudGet();
+          if (data && data.ok) {
+            if (data.config && data.config.cvText) {
+              state.cvText = data.config.cvText;
+              safeSet('liza_v4_cv_text', state.cvText);
+              document.getElementById('cvTextArea').value = state.cvText;
+            }
+            if (data.config && typeof data.config.customRss === "string") {
+              state.customRss = data.config.customRss;
+              safeSet('liza_v4_rss', state.customRss);
+              document.getElementById('customRssInput').value = state.customRss;
+            }
+            if (data.config && data.config.checklist) {
+              try {
+                state.checklist = JSON.parse(data.config.checklist);
+                safeSet('liza_v4_li_chk', JSON.stringify(state.checklist));
+                renderLinkedinTab();
+              } catch (e) {}
+            }
+            if (data.config && data.config.savedJobs) {
+              try {
+                const cloudSaved = JSON.parse(data.config.savedJobs);
+                if (Array.isArray(cloudSaved)) {
+                  state.savedJobs = cloudSaved;
+                  safeSet('liza_v4_saved_jobs', JSON.stringify(state.savedJobs));
+                  renderSavedJobsHistory();
+                }
+              } catch (e) {}
+            }
+            if (Array.isArray(data.sentJobs)) {
+              state.sentJobs = data.sentJobs;
+              safeSet('liza_v4_sent', JSON.stringify(state.sentJobs));
+              renderSentList();
+            }
+          }
+        } catch (e) {}
+      }
+
+      fetchBrazilJobs();
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.remove('opacity-0');
+      setTimeout(() => t.classList.add('opacity-0'), 3000);
+    }
+
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast('Copiado para a área de transferência!')).catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('Copiado para a área de transferência!');
+    }
+
+    function copyAboutText() {
+      copyText(document.getElementById('linkedinAboutText').value);
+    }
+
+    function switchTab(tab) {
+      ['vagas', 'cv', 'enviadas', 'linkedin'].forEach(id => {
+        document.getElementById(`view-${id}`).classList.toggle('hidden', id !== tab);
+        const btn = document.getElementById(`tab-${id}`);
+        if (id === tab) {
+          btn.classList.add('border-emerald-400', 'text-emerald-400');
+          btn.classList.remove('border-transparent', 'text-slate-400');
+        } else {
+          btn.classList.remove('border-emerald-400', 'text-emerald-400');
+          btn.classList.add('border-transparent', 'text-slate-400');
+        }
+      });
+    }
+
+    function unwrapUrl(raw) {
+      try {
+        const u = new URL(raw);
+        if (u.hostname.includes('google.com') && u.pathname.includes('/url')) {
+          return u.searchParams.get('url') || u.searchParams.get('q') || raw;
+        }
+      } catch (e) {}
+      return raw;
+    }
+
+    function computeMatchScore(title, tagsOrDesc) {
+      const text = (title + ' ' + tagsOrDesc).toLowerCase();
+      const cv = state.cvText.toLowerCase();
+      const keywords = ['negócios', 'business', 'product', 'produto', 'requisitos', 'api', 'apis', 'erp', 'integra', 'pagamento', 'crédito', 'qa', 'testes', 'bpmn', 'jira', 'scrum', 'webhook'];
+      let hits = 0;
+      keywords.forEach(k => {
+        if (text.includes(k) && cv.includes(k)) hits++;
+      });
+      return Math.min(98, 72 + hits * 5);
+    }
+
+    async function fetchBrazilJobs() {
+      const btn = document.getElementById('scanBtn');
+      const statusEl = document.getElementById('statusMessage');
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Atualizando Brasil...';
+
+      let rssJobs = [];
+
+      if (state.customRss.trim()) {
+        const urls = state.customRss.split(/\r?\n/).map(u => u.trim()).filter(Boolean);
+        for (const feedUrl of urls) {
+          try {
+            const rssRes = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`);
             const rssData = await rssRes.json();
             if (rssData.status === 'ok' && Array.isArray(rssData.items)) {
               rssData.items.forEach((item, i) => {
@@ -413,7 +613,8 @@ COMPETÊNCIAS E FERRAMENTAS:
       btn.disabled = false;
       btn.innerHTML = '<span>🔍</span> Buscar Vagas no Brasil';
       statusEl.textContent = isCloudConfigured()
-        ? `☁️ Sincronizado • ${merged.length} vagas` : `🇧🇷 ${merged.length} vagas do Brasil prontas`;
+        ? `☁️ Sincronizado • ${merged.length} vagas`
+        : `🇧🇷 ${merged.length} vagas do Brasil prontas`;
       renderJobsList();
     }
 
@@ -430,7 +631,7 @@ COMPETÊNCIAS E FERRAMENTAS:
       if (!job) return;
       document.getElementById('evalTitle').value = job.title;
       document.getElementById('evalCompany').value = job.company;
-      document.getElementById('evalDesc').value = `${job.title}\nLocal: ${job.location}\nPalavras-chave da vaga:${(job.tags || []).join(', ')}\n\n(Cole abaixo a descrição completa da vaga após abrir o link para aprofundar o diagnóstico!)`;
+      document.getElementById('evalDesc').value = `${job.title}\nLocal: ${job.location}\nPalavras-chave da vaga: ${(job.tags || []).join(', ')}\n\n(Cole abaixo a descrição completa da vaga após abrir o link para aprofundar o diagnóstico!)`;
       switchTab('cv');
       evaluateManualJob();
       showToast('Vaga carregada no analisador de currículo!');
@@ -473,7 +674,7 @@ COMPETÊNCIAS E FERRAMENTAS:
                 <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-purple-500/15 text-purple-300">
                   🇧🇷 ${job.location}
                 </span>
-                <span class="text-[11px] text-slate-500">${job.company} •${job.date}</span>
+                <span class="text-[11px] text-slate-500">${job.company} • ${job.date}</span>
               </div>
 
               <h3 class="text-sm font-bold text-white leading-snug">
@@ -522,7 +723,7 @@ COMPETÊNCIAS E FERRAMENTAS:
         showToast('✅ Salvo em Currículos Enviados (Google Sheets)!');
       }
       safeSet('liza_v4_sent', JSON.stringify(state.sentJobs));
-      cloudPost({ action: "syncSentJobs", sentJobs: state.sentJobs });
+      cloudPost({ action : "syncSentJobs", sentJobs: state.sentJobs });
       renderJobsList();
       renderSentList();
     }
@@ -611,23 +812,17 @@ COMPETÊNCIAS E FERRAMENTAS:
       document.getElementById('evalCompany').value = '';
       document.getElementById('evalDesc').value = '';
       document.getElementById('evalOutput').classList.add('hidden');
+      document.getElementById('tailoredCvBox').classList.add('hidden');
     }
 
     function escapeHtml(str) {
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    function evaluateManualJob() {
+    function getEvaluationData() {
       const title = document.getElementById('evalTitle').value.trim() || 'Vaga Avaliada';
       const company = document.getElementById('evalCompany').value.trim();
       const desc = document.getElementById('evalDesc').value.trim();
-      const out = document.getElementById('evalOutput');
-
-      if (!desc) {
-        showToast('Cole a descrição da vaga para analisar.');
-        return;
-      }
-
       const fullJobText = (title + ' ' + desc).toLowerCase();
       const cvLower = state.cvText.toLowerCase();
 
@@ -667,6 +862,40 @@ COMPETÊNCIAS E FERRAMENTAS:
         targetTitleSuggestion = 'Analista de Qualidade (QA) & Negócios | Automação de APIs & Testes';
       }
 
+      return {
+        title,
+        company,
+        desc,
+        matchedSkills,
+        missingInCv,
+        adherence,
+        isProductRole,
+        isIntegrationRole,
+        isQaRole,
+        targetTitleSuggestion
+      };
+    }
+
+    function evaluateManualJob() {
+      const desc = document.getElementById('evalDesc').value.trim();
+      const out = document.getElementById('evalOutput');
+
+      if (!desc) {
+        showToast('Cole a descrição da vaga para analisar.');
+        return;
+      }
+
+      const {
+        title,
+        company,
+        matchedSkills,
+        missingInCv,
+        adherence,
+        isProductRole,
+        isIntegrationRole,
+        targetTitleSuggestion
+      } = getEvaluationData();
+
       const improvementTips = [];
 
       improvementTips.push({
@@ -690,7 +919,7 @@ COMPETÊNCIAS E FERRAMENTAS:
       } else if (isIntegrationRole) {
         improvementTips.push({
           area: '3. Destaque Arquitetura de Integrações e Resiliência',
-          text: `Dê protagonismo aos fluxos síncronos/assíncronos que você especifica e valida:contratos REST (Swagger/Postman), tratamento de erros, webhooks, filas (RabbitMQ/Kafka) e regras de conciliação.`
+          text: `Dê protagonismo aos fluxos síncronos/assíncronos que você especifica e valida: contratos REST (Swagger/Postman), tratamento de erros, webhooks, filas (RabbitMQ/Kafka) e regras de conciliação.`
         });
       } else {
         improvementTips.push({
@@ -720,7 +949,7 @@ COMPETÊNCIAS E FERRAMENTAS:
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p class="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Diagnóstico para a vaga</p>
-              <h3 class="text-sm font-bold text-white">${escapeHtml(title)} ${company ? `• ${escapeHtml(company)}` : ''}</h3>
+              <h3 class="text-sm font-bold text-white">${escapeHtml(title)}${company ? `• ${escapeHtml(company)}` : ''}</h3>
             </div>
             <div class="text-right">
               <span class="text-2xl font-extrabold ${scoreColor}">${adherence}%</span>
@@ -776,10 +1005,176 @@ COMPETÊNCIAS E FERRAMENTAS:
 
           <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-1">
             <p class="text-[11px] font-bold text-emerald-300">Exemplo de bullet otimizado para colar na sua experiência:</p>
-            <p class="text-xs text-slate-200 italic">${escapeHtml(readyBullet)}</p>
+            <p class ="text-xs text-slate-200 italic">${escapeHtml(readyBullet)}</p>
           </div>
         </div>
       `;
+    }
+
+    function generateTailoredCv() {
+      const desc = document.getElementById('evalDesc').value.trim();
+      if (!desc) {
+        showToast('Cole a descrição da vaga primeiro para adaptar o currículo.');
+        return;
+      }
+
+      const {
+        title,
+        company,
+        matchedSkills,
+        targetTitleSuggestion
+      } = getEvaluationData();
+
+      const baseCv = (document.getElementById('cvTextArea').value || state.cvText || DEFAULT_CV).trim();
+      const lines = baseCv.split(/\r?\n/);
+
+      const adjustedLines = lines.map((line, index) => {
+        if (index === 1 && line.includes('|')) {
+          return targetTitleSuggestion;
+        }
+        return line;
+      });
+
+      const matchesNote = matchedSkills.length
+        ? `[Foco para a vaga: ${title}${company ? ` • ${company}` : ''} | Pontos já presentes no CV: ${matchedSkills.join(', ')}]`
+        : `[Foco para a vaga: ${title}${company ? ` • ${company}` : ''}]`;
+
+      const insertAt = Math.min(2, adjustedLines.length);
+      adjustedLines.splice(insertAt, 0, '', matchesNote);
+
+      document.getElementById('tailoredCvArea').value = adjustedLines.join('\n').replace(/\n{3,}/g, '\n\n');
+      document.getElementById('tailoredCvBox').classList.remove('hidden');
+      showToast('Currículo ajustado mantendo a ordem original, sem adicionar o que você não tem!');
+    }
+
+    function copyTailoredCv() {
+      copyText(document.getElementById('tailoredCvArea').value);
+    }
+
+    function downloadTailoredCvTxt() {
+      const content = document.getElementById('tailoredCvArea').value;
+      if (!content.trim()) return;
+      const roleSlug = (document.getElementById('evalTitle').value.trim() || 'Vaga')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_|_$/g, '');
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Curriculo_Liza_${roleSlug || 'Vaga'}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Arquivo .TXT do currículo baixado!');
+    }
+
+    function printTailoredCv() {
+      const content = document.getElementById('tailoredCvArea').value;
+      if (!content.trim()) return;
+      const win = window.open('', '_blank');
+      if (!win) {
+        showToast('Permita pop-ups para salvar em PDF.');
+        return;
+      }
+      win.document.write(`
+        <html>
+          <head>
+            <title>Currículo - Elizaine Orosco</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 32px; color: #111827; line-height: 1.5; }
+              pre { white-space: pre-wrap; font-family: Arial, sans-serif; font-size: 13px; }
+            </style>
+          </head>
+          <body>
+            <pre>${escapeHtml(content)}</pre>
+            <script>window.print();<\/script>
+          </body>
+        </html>
+      `);
+      win.document.close();
+    }
+
+    function saveAnalyzedJob() {
+      const title = document.getElementById('evalTitle').value.trim();
+      const company = document.getElementById('evalCompany').value.trim();
+      const desc = document.getElementById('evalDesc').value.trim();
+
+      if (!title && !desc) {
+        showToast('Preencha o cargo ou a descrição da vaga para salvar.');
+        return;
+      }
+
+      const { adherence } = getEvaluationData();
+      const entry = {
+        id: 'job-' + Date.now(),
+        title: title || 'Vaga sem título',
+        company: company || 'Empresa não informada',
+        desc,
+        adherence,
+        savedAt: new Date().toLocaleDateString('pt-BR')
+      };
+
+      const existingIdx = state.savedJobs.findIndex(
+        j => j.title.toLowerCase() === entry.title.toLowerCase() && j.company.toLowerCase() === entry.company.toLowerCase()
+      );
+      if (existingIdx >= 0) {
+        state.savedJobs[existingIdx] = entry;
+      } else {
+        state.savedJobs.unshift(entry);
+      }
+      safeSet('liza_v4_saved_jobs', JSON.stringify(state.savedJobs));
+      cloudPost({ action: "saveConfig", key: "savedJobs", value: JSON.stringify(state.savedJobs) });
+      renderSavedJobsHistory();
+      showToast('Vaga salva no histórico!');
+    }
+
+    function renderSavedJobsHistory() {
+      const container = document.getElementById('savedJobsHistoryList');
+      const badge = document.getElementById('savedJobsCount');
+      if (!container || !badge) return;
+
+      badge.textContent = state.savedJobs.length;
+      if (!state.savedJobs.length) {
+        container.innerHTML = `<p class="text-xs text-slate-500 py-3">Nenhuma vaga salva no histórico ainda.</p>`;
+        return;
+      }
+
+      container.innerHTML = state.savedJobs.map((item, idx) => `
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3">
+          <div class="min-w-[200px] flex-1">
+            <p class="text-xs font-bold text-white">${escapeHtml(item.title)}</p>
+            <p class="text-[11px] text-slate-400">${escapeHtml(item.company)} • Salva em ${escapeHtml(item.savedAt)} • Match ${item.adherence || 80}%</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="loadSavedJob(${idx})" class="text-xs bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 font-semibold px-3 py-1.5 rounded-lg cursor-pointer">
+              Abrir Vaga
+            </button>
+            <button onclick="deleteSavedJob(${idx})" class="text-xs text-slate-500 hover:text-rose-400 px-2 py-1 cursor-pointer">
+              ✕
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function loadSavedJob(idx) {
+      const item = state.savedJobs[idx];
+      if (!item) return;
+      document.getElementById('evalTitle').value = item.title || '';
+      document.getElementById('evalCompany').value = item.company || '';
+      document.getElementById('evalDesc').value = item.desc || '';
+      if (item.desc) {
+        evaluateManualJob();
+      }
+      showToast('Vaga carregada do histórico!');
+    }
+
+    function deleteSavedJob(idx) {
+      state.savedJobs.splice(idx, 1);
+      safeSet('liza_v4_saved_jobs', JSON.stringify(state.savedJobs));
+      cloudPost({ action: "saveConfig", key: "savedJobs", value: JSON.stringify(state.savedJobs) });
+      renderSavedJobsHistory();
+      showToast('Vaga removida do histórico.');
     }
 
     function renderLinkedinTab() {
