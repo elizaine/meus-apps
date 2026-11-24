@@ -242,7 +242,6 @@ Experiência consolidada em ecossistemas financeiros, meios de pagamento, concil
   <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 border border-emerald-500/40 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl opacity-0 pointer-events-none transition-opacity duration-300 z-50"></div>
 
   <script>
-    // 👇 COLE AQUI A URL /exec DO SEU GOOGLE APPS SCRIPT
     const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbzpgOsTtgMWsSAE5ypbLwGBHEoTXydMv5zQf5bi_ZiCHEHHsmK2nozOb8HFPZwlLrzxSw/exec";
     const CLOUD_TOKEN = "LIZA_HUB_2026";
 
@@ -254,4 +253,22 @@ RESUMO PROFISSIONAL:
 Analista de Negócios e Testes com mais de 7 anos de experiência em engenharia de software, atuando na ponte entre áreas de negócio, parceiros externos e engenharia no time de inovação de sistemas ERP. Especialista em levantamento de requisitos, regras de negócio, integrações via APIs REST, webhooks e garantia da qualidade.
 
 COMPETÊNCIAS E FERRAMENTAS:
-- Análise de Negócios & Produto: Levantamento de requisitos, histórias
+- Análise de Negócios & Produto: Levantamento de requisitos, histórias de usuário, critérios de aceite (Gherkin/BDD), mapeamento de processos (BPMN), backlog, homologação, Jira, Confluence, Scrum, Kanban.
+- Integrações & Arquitetura: APIs REST, JSON, Swagger, Postman, Webhooks, mensageria assíncrona (RabbitMQ, Kafka), idempotência.
+- Domínios de Negócio: ERP, meios de pagamento, links de pagamento, conciliação financeira, análise de crédito e crediário.
+- Qualidade & Automação: Automação de testes end-to-end e API (Robot Framework, Cypress, Playwright), gestão de casos de teste e automação de documentação com IA.`;
+
+    const SKILL_DICTIONARY = [
+      { label: 'Análise de Negócios / Requisitos', terms: ['análise de negócios', 'analista de negócios', 'levantamento de requisitos', 'requisitos', 'business analysis', 'business analyst'] },
+      { label: 'Gestão de Produto / Product Analyst', terms: ['product analyst', 'analista de produto', 'gestão de produto', 'product owner', 'discovery', 'roadmap', 'backlog'] },
+      { label: 'Integrações de Sistemas / ERP', terms: ['erp', 'integração', 'integrações', 'parceiros', 'sistemas'] },
+      { label: 'APIs REST / Swagger / Postman', terms: ['api', 'apis', 'rest', 'restful', 'swagger', 'postman', 'json'] },
+      { label: 'Webhooks & Mensageria (RabbitMQ/Kafka)', terms: ['webhook', 'webhooks', 'mensageria', 'rabbitmq', 'kafka', 'filas', 'assíncrona'] },
+      { label: 'Meios de Pagamento & Conciliação', terms: ['pagamento', 'pagamentos', 'conciliação', 'pix', 'cartão', 'adquirência', 'fintech'] },
+      { label: 'Crédito & Crediário', terms: ['crédito', 'crediário', 'risco', 'antifraude', 'financeiro'] },
+      { label: 'Modelagem BPMN & Processos', terms: ['bpmn', 'fluxo', 'fluxos', 'processos', 'as-is', 'to-be'] },
+      { label: 'Histórias de Usuário & Gherkin / BDD', terms: ['histórias de usuário', 'user stories', 'critérios de aceite', 'gherkin', 'bdd'] },
+      { label: 'Metodologias Ágeis (Scrum / Kanban)', terms: ['scrum', 'kanban', 'ágil', 'ágeis', 'agile', 'sprint', 'cerimônias'] },
+      { label: 'Jira & Confluence', terms: ['jira', 'confluence', 'azure devops'] },
+      { label: 'QA & Automação de Testes', terms: ['qa', 'qualidade', 'testes', 'cypress', 'playwright', 'robot framework', 'homologação'] },
+      { label: 'SQL & Banco de Dados', terms: ['sql', 'banco de dados', 'queries', 'query
