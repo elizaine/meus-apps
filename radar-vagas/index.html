@@ -256,7 +256,7 @@ COMPETÊNCIAS E FERRAMENTAS:
 - Análise de Negócios & Produto: Levantamento de requisitos, histórias de usuário, critérios de aceite (Gherkin/BDD), mapeamento de processos (BPMN), backlog, homologação, Jira, Confluence, Scrum, Kanban.
 - Integrações & Arquitetura: APIs REST, JSON, Swagger, Postman, Webhooks, mensageria assíncrona (RabbitMQ, Kafka), idempotência.
 - Domínios de Negócio: ERP, meios de pagamento, links de pagamento, conciliação financeira, análise de crédito e crediário.
-- Qualidade & Automação: Automação de testes end-to-end e API (Robot Framework, Cypress, Playwright), gestão de casos de teste e automação de documentação com IA.`;
+- Qualidade & Automação: Automação de testes end-to-end e API (Robot Framework), gestão de casos de teste e automação de documentação com IA.`;
 
     const SKILL_DICTIONARY = [
       { label: 'Análise de Negócios / Requisitos', terms: ['análise de negócios', 'analista de negócios', 'levantamento de requisitos', 'requisitos', 'business analysis', 'business analyst'] },
@@ -270,5 +270,424 @@ COMPETÊNCIAS E FERRAMENTAS:
       { label: 'Histórias de Usuário & Gherkin / BDD', terms: ['histórias de usuário', 'user stories', 'critérios de aceite', 'gherkin', 'bdd'] },
       { label: 'Metodologias Ágeis (Scrum / Kanban)', terms: ['scrum', 'kanban', 'ágil', 'ágeis', 'agile', 'sprint', 'cerimônias'] },
       { label: 'Jira & Confluence', terms: ['jira', 'confluence', 'azure devops'] },
-      { label: 'QA & Automação de Testes', terms: ['qa', 'qualidade', 'testes', 'cypress', 'playwright', 'robot framework', 'homologação'] },
-      { label: 'SQL & Banco de Dados', terms: ['sql', 'banco de dados', 'queries', 'query
+      { label: 'QA & Automação de Testes', terms: ['qa', 'qualidade', 'testes', 'robot framework', 'homologação'] },
+      { label: 'SQL & Banco de Dados', terms: ['sql', 'banco de dados', 'queries', 'query', 'postgresql', 'mysql', 'oracle'] },
+      { label: 'Métricas de Produto (KPIs / OKRs)', terms: ['kpi', 'kpis', 'okr', 'okrs', 'métricas', 'indicadores', 'analytics'] },
+      { label: 'UX / Prototipação (Figma)', terms: ['figma', 'protótipo', 'prototipação', 'ux', 'ui', 'usabilidade'] },
+      { label: 'Power BI / Análise de Dados', terms: ['power bi', 'bi', 'dashboards', 'excel avançado', 'looker', 'metabase'] },
+      { label: 'Inglês Técnico / Avançado', terms: ['inglês', 'english', 'bilingue', 'bilíngue'] },
+      { label: 'Cloud (AWS / Azure / GCP)', terms: ['aws', 'azure', 'gcp', 'cloud', 'nuvem'] }
+    ];
+
+    const LINKEDIN_KEYWORDS = [
+      'Analista de Negócios', 'Analista de Requisitos', 'Product Analyst', 'Analista de Produto', 'Product Owner',
+      'Technical Business Analyst', 'Integrações ERP', 'APIs REST', 'Webhooks', 'Mensageria', 'RabbitMQ', 'Kafka',
+      'Meios de Pagamento', 'Análise de Crédito', 'Conciliação Financeira', 'Regras de Negócio', 'BPMN',
+      'Histórias de Usuário', 'Critérios de Aceite', 'Backlog', 'Swagger', 'Postman', 'Jira', 'Confluence',
+      'Scrum', 'Kanban', 'Automação de Testes', 'Robot Framework', 'Gherkin', 'BDD', 'QA'
+    ];
+
+    const LINKEDIN_CHECKLIST = [
+      { id: 'chk1', title: 'Remover "Em busca de oportunidades" do Título', desc: 'Use o título técnico acima com cargos exatos e palavras-chave.' },
+      { id: 'chk2', title: 'Fixar as Top 5 Competências no topo', desc: 'Deixe Análise de Negócios, Gestão de Produtos, APIs REST, Requisitos e Integração de Sistemas nas 5 primeiras.' },
+      { id: 'chk3', title: 'Ativar "Open to Work" apenas para recrutadores', desc: 'Marque os 5 cargos-alvo, Remoto e Florianópolis/São José - SC (sem selo verde na foto).' },
+      { id: 'chk4', title: 'Ajustar localização estratégica se desejar SC', desc: 'Recrutadores locais filtram por raio de distância em Florianópolis / São José - SC.' },
+      { id: 'chk5', title: 'Preencher experiência unificada como Analista de Negócios e Testes', desc: 'Destaque as entregas de integração, APIs, meios de pagamento e automação.' },
+      { id: 'chk6', title: 'Fazer 2 a 3 comentários técnicos por semana', desc: 'Sinaliza perfil ativo para o algoritmo do LinkedIn Recruiter.' }
+    ];
+
+    const BRAZIL_JOBS = [
+      {
+        id: 'br-1',
+        title: 'Product Analyst / Analista de Produto Pleno (Integrações & Pagamentos)',
+        company: 'Gupy Brasil • Fintech / Meios de Pagamento',
+        location: 'Remoto (Brasil)',
+        isRemote: true,
+        date: 'Recente',
+        url: 'https://portal.gupy.io/job-search/term=Product%20Analyst%20Remoto',
+        tags: ['Product Analyst', 'APIs REST', 'Pagamentos']
+      },
+      {
+        id: 'br-2',
+        title: 'Analista de Negócios e Requisitos Sênior (ERP & APIs)',
+        company: 'Gupy Brasil • Tecnologia & ERP',
+        location: 'Remoto (Brasil)',
+        isRemote: true,
+        date: 'Recente',
+        url: 'https://portal.gupy.io/job-search/term=Analista%20de%20Negocios%20Remoto',
+        tags: ['Analista de Negócios', 'ERP', 'Requisitos']
+      },
+      {
+        id: 'br-3',
+        title: 'Analista de Negócios / Requisitos Técnicos (APIs & Webhooks)',
+        company: 'LinkedIn Brasil • Remoto',
+        location: 'Remoto (Brasil)',
+        isRemote: true,
+        date: 'Últimos 7 dias',
+        url: 'https://www.linkedin.com/jobs/search/?keywords=Analista%20de%20Neg%C3%B3cios%20API&location=Brasil&f_WT=2&f_TPR=r604800',
+        tags: ['Business Analyst', 'Webhooks', 'Jira']
+      },
+      {
+        id: 'br-4',
+        title: 'Product Owner / Analista de Produto (Crédito & Financeiro)',
+        company: 'GeekHunter Brasil • Tech',
+        location: 'Remoto (Brasil)',
+        isRemote: true,
+        date: 'Recente',
+        url: 'https://www.geekhunter.com.br/vagas?q=Product+Owner',
+        tags: ['Product Owner', 'Crédito', 'Scrum']
+      },
+      {
+        id: 'br-5',
+        title: 'Analista de Qualidade / QA Sênior (Automação de APIs & Robot Framework)',
+        company: 'Programathor Brasil • Remoto',
+        location: 'Remoto (Brasil)',
+        isRemote: true,
+        date: 'Recente',
+        url: 'https://programathor.com.br/jobs?term=QA',
+        tags: ['QA', 'APIs', 'Automação']
+      },
+      {
+        id: 'br-6',
+        title: 'Analista de Requisitos / Negócios (Sistemas & Integrações)',
+        company: 'Vagas.com.br • Remoto Brasil',
+        location: 'Remoto (Brasil)',
+        isRemote: true,
+        date: 'Recente',
+        url: 'https://www.vagas.com.br/vagas-de-analista-de-negocios?m%5B%5D=100%25+Home+Office',
+        tags: ['Vagas.com', 'Requisitos', 'BPMN']
+      },
+      {
+        id: 'br-7',
+        title: 'Analista de Negócios / Produto (Grande Florianópolis / São José - SC)',
+        company: 'LinkedIn Brasil • Santa Catarina',
+        location: 'Florianópolis / São José - SC',
+        isRemote: false,
+        date: 'Últimos 7 dias',
+        url: 'https://www.linkedin.com/jobs/search/?keywords=Analista%20de%20Neg%C3%B3cios%20OR%20Product%20Analyst&location=Florian%C3%B3polis%2C%20Santa%20Catarina%2C%20Brasil&f_TPR=r604800',
+        tags: ['Florianópolis', 'São José', 'SC']
+      }
+    ];
+
+    function isCloudConfigured() {
+      return CLOUD_API_URL && !CLOUD_API_URL.includes("COLE_AQUI");
+    }
+
+    async function cloudGet() {
+      if (!isCloudConfigured()) return null;
+      const res = await fetch(`${CLOUD_API_URL}?token=${encodeURIComponent(CLOUD_TOKEN)}`); return await res.json(); }  async function cloudPost(payload) { if (!isCloudConfigured()) return null; await fetch(CLOUD_API_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ ...payload, token: CLOUD_TOKEN }) }); }  function safeGet(k, def) { try { const v = localStorage.getItem(k); return v !== null ? v : def; } catch (e) { return def; } } function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }  let state = { jobs: [...BRAZIL_JOBS], cvText: safeGet('liza_v4_cv_text', DEFAULT_CV), cvFile: JSON.parse(safeGet('liza_v4_cv_file', 'null')), sentJobs: JSON.parse(safeGet('liza_v4_sent', '[]')), customRss: safeGet('liza_v4_rss', ''), checklist: JSON.parse(safeGet('liza_v4_li_chk', '{}')) };  async function init() { document.getElementById('cvTextArea').value = state.cvText; document.getElementById('customRssInput').value = state.customRss; renderStoredCv(); renderSentList(); renderLinkedinTab();  if (isCloudConfigured()) { try { const data = await cloudGet(); if (data && data.ok) { if (data.config && data.config.cvText) { state.cvText = data.config.cvText; safeSet('liza_v4_cv_text', state.cvText); document.getElementById('cvTextArea').value = state.cvText; } if (data.config && typeof data.config.customRss === "string") { state.customRss = data.config.customRss; safeSet('liza_v4_rss', state.customRss); document.getElementById('customRssInput').value = state.customRss; } if (data.config && data.config.checklist) { try { state.checklist = JSON.parse(data.config.checklist); safeSet('liza_v4_li_chk', JSON.stringify(state.checklist)); renderLinkedinTab(); } catch (e) {} } if (Array.isArray(data.sentJobs)) { state.sentJobs = data.sentJobs; safeSet('liza_v4_sent', JSON.stringify(state.sentJobs)); renderSentList(); } } } catch (e) {} }  fetchBrazilJobs(); }  function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('opacity-0'); setTimeout(() => t.classList.add('opacity-0'), 3000); }  function copyText(text) { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(() => showToast('Copiado para a área de transferência!')).catch(() => fallbackCopy(text)); } else { fallbackCopy(text); } }  function fallbackCopy(text) { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('Copiado para a área de transferência!'); }  function copyAboutText() { copyText(document.getElementById('linkedinAboutText').value); }  function switchTab(tab) { ['vagas', 'cv', 'enviadas', 'linkedin'].forEach(id => { document.getElementById(`view-${id}`).classList.toggle('hidden', id !== tab);
+        const btn = document.getElementById(`tab-${id}`); if (id === tab) { btn.classList.add('border-emerald-400', 'text-emerald-400'); btn.classList.remove('border-transparent', 'text-slate-400'); } else { btn.classList.remove('border-emerald-400', 'text-emerald-400'); btn.classList.add('border-transparent', 'text-slate-400'); } }); }  function unwrapUrl(raw) { try { const u = new URL(raw); if (u.hostname.includes('google.com') && u.pathname.includes('/url')) { return u.searchParams.get('url') \vert{}\vert{} u.searchParams.get('q') \vert{}\vert{} raw; } } catch (e) {} return raw; }  function computeMatchScore(title, tagsOrDesc) { const text = (title + ' ' + tagsOrDesc).toLowerCase(); const cv = state.cvText.toLowerCase(); const keywords = ['negócios', 'business', 'product', 'produto', 'requisitos', 'api', 'apis', 'erp', 'integra', 'pagamento', 'crédito', 'qa', 'testes', 'bpmn', 'jira', 'scrum', 'webhook']; let hits = 0; keywords.forEach(k => { if (text.includes(k) && cv.includes(k)) hits++; }); return Math.min(98, 72 + hits * 5); }  async function fetchBrazilJobs() { const btn = document.getElementById('scanBtn'); const statusEl = document.getElementById('statusMessage'); btn.disabled = true; btn.innerHTML = '⏳ Atualizando Brasil...';  let rssJobs = [];  if (state.customRss.trim()) { const urls = state.customRss.split(/\r?\n/).map(u => u.trim()).filter(Boolean); for (const feedUrl of urls) { try { const rssRes = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`);
+            const rssData = await rssRes.json();
+            if (rssData.status === 'ok' && Array.isArray(rssData.items)) {
+              rssData.items.forEach((item, i) => {
+                const cleanTitle = item.title.replace(/<[^>]*>?/gm, '');
+                const cleanUrl = unwrapUrl(item.link);
+                let host = 'Portal Brasil';
+                try { host = new URL(cleanUrl).hostname.replace('www.', ''); } catch (e) {}
+                rssJobs.push({
+                  id: 'rss-' + i + '-' + Date.now(),
+                  title: cleanTitle,
+                  company: host,
+                  location: /remoto|remote|home office/i.test(cleanTitle + ' ' + item.description) ? 'Remoto (Brasil)' : 'Brasil / Verificar',
+                  isRemote: /remoto|remote|home office/i.test(cleanTitle + ' ' + item.description),
+                  date: (item.pubDate || '').slice(0, 10),
+                  url: cleanUrl,
+                  tags: ['Google Alertas', host]
+                });
+              });
+            }
+          } catch (e) {}
+        }
+      }
+
+      const seenUrls = new Set();
+      const merged = [];
+      [...rssJobs, ...BRAZIL_JOBS].forEach(job => {
+        if (!seenUrls.has(job.url)) {
+          seenUrls.add(job.url);
+          merged.push(job);
+        }
+      });
+
+      state.jobs = merged;
+      btn.disabled = false;
+      btn.innerHTML = '<span>🔍</span> Buscar Vagas no Brasil';
+      statusEl.textContent = isCloudConfigured()
+        ? `☁️ Sincronizado • ${merged.length} vagas` : `🇧🇷 ${merged.length} vagas do Brasil prontas`;
+      renderJobsList();
+    }
+
+    function saveCustomRssAndFetch() {
+      state.customRss = document.getElementById('customRssInput').value.trim();
+      safeSet('liza_v4_rss', state.customRss);
+      cloudPost({ action: "saveConfig", key: "customRss", value: state.customRss });
+      fetchBrazilJobs();
+      showToast('Feeds RSS salvos na nuvem e lista atualizada!');
+    }
+
+    function openJobForAnalysis(idx) {
+      const job = (window.__visibleJobs || [])[idx];
+      if (!job) return;
+      document.getElementById('evalTitle').value = job.title;
+      document.getElementById('evalCompany').value = job.company;
+      document.getElementById('evalDesc').value = `${job.title}\nLocal: ${job.location}\nPalavras-chave da vaga:${(job.tags || []).join(', ')}\n\n(Cole abaixo a descrição completa da vaga após abrir o link para aprofundar o diagnóstico!)`;
+      switchTab('cv');
+      evaluateManualJob();
+      showToast('Vaga carregada no analisador de currículo!');
+    }
+
+    function renderJobsList() {
+      const container = document.getElementById('jobsContainer');
+      const remoteOnly = document.getElementById('remoteOnlyToggle').checked;
+      const kw = document.getElementById('keywordFilter').value.trim().toLowerCase();
+
+      const filtered = state.jobs.filter(job => {
+        if (remoteOnly && !job.isRemote) return false;
+        if (kw) {
+          const hay = (job.title + ' ' + job.company + ' ' + (job.tags || []).join(' ')).toLowerCase();
+          if (!hay.includes(kw)) return false;
+        }
+        return true;
+      });
+
+      document.getElementById('jobsCountBadge').textContent = filtered.length;
+
+      if (!filtered.length) {
+        container.innerHTML = `<div class="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center text-xs text-slate-400">Nenhuma vaga encontrada com esse filtro.</div>`;
+        return;
+      }
+
+      window.__visibleJobs = filtered;
+
+      container.innerHTML = filtered.map((job, idx) => {
+        const isSent = state.sentJobs.some(s => s.url === job.url);
+        const match = computeMatchScore(job.title, (job.tags || []).join(' '));
+
+        return `
+          <div class="bg-slate-900 border ${isSent ? 'border-emerald-500/40' : 'border-slate-800'} hover:border-slate-700 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 transition">
+            <div class="space-y-1.5 flex-1 min-w-[240px]">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                  Match ${match}%
+                </span>
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-purple-500/15 text-purple-300">
+                  🇧🇷 ${job.location}
+                </span>
+                <span class="text-[11px] text-slate-500">${job.company} •${job.date}</span>
+              </div>
+
+              <h3 class="text-sm font-bold text-white leading-snug">
+                <a href="${job.url}" target="_blank" rel="noopener noreferrer" class="hover:text-emerald-400 transition">
+                  ${job.title}
+                </a>
+              </h3>
+
+              <div class="flex flex-wrap gap-1.5 pt-0.5">
+                ${(job.tags || []).map(t => `<span class="text-[10px] bg-slate-950 text-slate-400 border border-slate-800 px-2 py-0.5 rounded">${t}</span>`).join('')}
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+              <button onclick="openJobForAnalysis(${idx})" class="text-xs font-semibold px-3 py-2 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 transition cursor-pointer">
+                🧠 Analisar CV
+              </button>
+
+              <button onclick="toggleSentJob(${idx})" class="text-xs font-semibold px-3 py-2 rounded-lg border transition cursor-pointer ${isSent ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-600'}">
+                ${isSent ? '✅ Enviado' : 'Marcar Enviado'}
+              </button>
+
+              <a href="${job.url}" target="_blank" rel="noopener noreferrer" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-4 py-2 rounded-lg transition">
+                Abrir Vaga ↗
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleSentJob(idx) {
+      const job = (window.__visibleJobs || [])[idx];
+      if (!job) return;
+      const existsIdx = state.sentJobs.findIndex(s => s.url === job.url);
+      if (existsIdx >= 0) {
+        state.sentJobs.splice(existsIdx, 1);
+        showToast('Removido de Currículos Enviados.');
+      } else {
+        state.sentJobs.unshift({
+          title: job.title,
+          company: job.company,
+          url: job.url,
+          sentDate: new Date().toLocaleDateString('pt-BR')
+        });
+        showToast('✅ Salvo em Currículos Enviados (Google Sheets)!');
+      }
+      safeSet('liza_v4_sent', JSON.stringify(state.sentJobs));
+      cloudPost({ action: "syncSentJobs", sentJobs: state.sentJobs });
+      renderJobsList();
+      renderSentList();
+    }
+
+    function renderSentList() {
+      const container = document.getElementById('sentListContainer');
+      document.getElementById('sentCountBadge').textContent = state.sentJobs.length;
+      if (!state.sentJobs.length) {
+        container.innerHTML = `<p class="text-xs text-slate-500 py-6 text-center">Você ainda não marcou nenhuma vaga como enviada.</p>`;
+        return;
+      }
+      container.innerHTML = state.sentJobs.map((s, idx) => `
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p class="text-xs font-bold text-white">${s.title}</p>
+            <p class="text-[11px] text-slate-400">${s.company} • Enviado em ${s.sentDate}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <a href="${s.url}" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-sky-300 px-3 py-1.5 rounded-lg">Ver Vaga ↗</a>
+            <button onclick="removeSent(${idx})" class="text-xs text-slate-500 hover:text-rose-400 px-2 py-1 cursor-pointer">✕</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function removeSent(idx) {
+      state.sentJobs.splice(idx, 1);
+      safeSet('liza_v4_sent', JSON.stringify(state.sentJobs));
+      cloudPost({ action: "syncSentJobs", sentJobs: state.sentJobs });
+      renderSentList();
+      renderJobsList();
+    }
+
+    function handleCvUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        state.cvFile = { name: file.name, dataUrl: ev.target.result };
+        safeSet('liza_v4_cv_file', JSON.stringify(state.cvFile));
+        renderStoredCv();
+        showToast('Currículo anexado!');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function renderStoredCv() {
+      const card = document.getElementById('storedCvCard');
+      const btn = document.getElementById('headerDownloadCvBtn');
+      if (state.cvFile) {
+        card.classList.remove('hidden');
+        document.getElementById('storedCvName').textContent = state.cvFile.name;
+        btn.classList.remove('hidden');
+        btn.classList.add('flex');
+      } else {
+        card.classList.add('hidden');
+        btn.classList.add('hidden');
+        btn.classList.remove('flex');
+      }
+    }
+
+    function downloadStoredCv() {
+      if (!state.cvFile) return;
+      const a = document.createElement('a');
+      a.href = state.cvFile.dataUrl;
+      a.download = state.cvFile.name;
+      a.click();
+    }
+
+    function removeStoredCv() {
+      state.cvFile = null;
+      try { localStorage.removeItem('liza_v4_cv_file'); } catch (e) {}
+      renderStoredCv();
+    }
+
+    function saveCvText() {
+      state.cvText = document.getElementById('cvTextArea').value;
+      safeSet('liza_v4_cv_text', state.cvText);
+      cloudPost({ action: "saveConfig", key: "cvText", value: state.cvText });
+      renderJobsList();
+      showToast('Currículo salvo no Google Sheets!');
+    }
+
+    function clearManualEval() {
+      document.getElementById('evalTitle').value = '';
+      document.getElementById('evalCompany').value = '';
+      document.getElementById('evalDesc').value = '';
+      document.getElementById('evalOutput').classList.add('hidden');
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function evaluateManualJob() {
+      const title = document.getElementById('evalTitle').value.trim() || 'Vaga Avaliada';
+      const company = document.getElementById('evalCompany').value.trim();
+      const desc = document.getElementById('evalDesc').value.trim();
+      const out = document.getElementById('evalOutput');
+
+      if (!desc) {
+        showToast('Cole a descrição da vaga para analisar.');
+        return;
+      }
+
+      const fullJobText = (title + ' ' + desc).toLowerCase();
+      const cvLower = state.cvText.toLowerCase();
+
+      const matchedSkills = [];
+      const missingInCv = [];
+
+      SKILL_DICTIONARY.forEach(skill => {
+        const jobNeedsIt = skill.terms.some(t => fullJobText.includes(t));
+        const cvHasIt = skill.terms.some(t => cvLower.includes(t));
+
+        if (jobNeedsIt && cvHasIt) {
+          matchedSkills.push(skill.label);
+        } else if (jobNeedsIt && !cvHasIt) {
+          missingInCv.push(skill);
+        }
+      });
+
+      if (matchedSkills.length === 0 && missingInCv.length === 0) {
+        matchedSkills.push('Análise de Negócios / Requisitos', 'Metodologias Ágeis (Scrum / Kanban)', 'Jira & Confluence');
+      }
+
+      const totalRelevant = matchedSkills.length + missingInCv.length;
+      const adherence = totalRelevant > 0
+        ? Math.min(98, Math.max(45, Math.round((matchedSkills.length / totalRelevant) * 100)))
+        : 80;
+
+      const isProductRole = /product|produto|po\b|product owner|discovery/i.test(fullJobText);
+      const isIntegrationRole = /api|integra|erp|webhook|mensageria|pagamento|crédito/i.test(fullJobText);
+      const isQaRole = /qa|qualidade|testes|automação/i.test(fullJobText);
+
+      let targetTitleSuggestion = 'Analista de Negócios e Requisitos | Integrações ERP & APIs REST';
+      if (isProductRole && isIntegrationRole) {
+        targetTitleSuggestion = 'Product Analyst | Analista de Negócios & Integrações (APIs, ERP & Pagamentos)';
+      } else if (isProductRole) {
+        targetTitleSuggestion = 'Product Analyst | Analista de Produto e Negócios (Discovery, Backlog & Métricas)';
+      } else if (isQaRole) {
+        targetTitleSuggestion = 'Analista de Qualidade (QA) & Negócios | Automação de APIs & Testes';
+      }
+
+      const improvementTips = [];
+
+      improvementTips.push({
+        area: '1. Ajuste o Título (Cabeçalho) do Currículo para esta vaga',
+        text: `Substitua o título no topo do CV por: "${targetTitleSuggestion}". Isso aumenta imediatamente o ranqueamento nos filtros ATS (Gupy, Greenhouse, LinkedIn).`
+      });
+
+      if (missingInCv.length > 0) {
+        const missingNames = missingInCv.map(m => m.label).join(', ');
+        improvementTips.push({
+          area: '2. Palavras-chave da vaga ausentes no seu CV (Adicione se tiver vivência)',
+          text: `A vaga pede: ${missingNames}. Inclua esses termos exatos na seção de Competências ou nos bullets da sua experiência atual (ex: se você já consultou banco de dados para validar integrações, cite "SQL / consulta a banco de dados"; se acompanhou indicadores de entrega ou conversão, cite "KPIs / métricas de produto").`
+        });
+      }
+
+      if (isProductRole) {
+        improvementTips.push({
+          area: '3. Enfoque em Produto e Valor de Negócio',
+          text: `Traduza suas entregas de integração em impacto de produto: destaque como a conexão com parceiros (meios de pagamento, crédito/crediário, e-commerce) reduziu atrito no fluxo do cliente, acelerou o time-to-market e evitou falhas em produção.`
+        });
+      } else if (isIntegrationRole) {
+        improvementTips.push({
+          area: '3. Destaque Arquitetura de Integrações e Resiliência',
+          text: `Dê protagonismo aos fluxos síncronos/assíncronos que você especifica e valida:
