@@ -1,0 +1,1848 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aluguéis & Mapa Urbano — Floripa e São José</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Leaflet.js CSS & JS via CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Leaflet custom price badge marker */
+    .price-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 11px;
+      color: #ffffff;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      border: 2px solid #ffffff;
+      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.3);
+      white-space: nowrap;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      cursor: pointer;
+    }
+    .price-marker:hover,
+    .price-marker.active-marker {
+      transform: scale(1.22);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.45);
+      z-index: 1000 !important;
+      border-color: #fef08a;
+    }
+
+    /* Thematic POI Marker */
+    .poi-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+      font-size: 13px;
+    }
+
+    /* Pulsing Address Pin */
+    .address-pulse-pin {
+      width: 22px;
+      height: 22px;
+      border-radius: 9999px;
+      background: #7c3aed;
+      border: 3px solid #ffffff;
+      box-shadow: 0 0 0 6px rgba(124, 58, 237, 0.28), 0 4px 12px rgba(0, 0, 0, 0.35);
+      animation: pulsePin 1.8s infinite;
+    }
+    @keyframes pulsePin {
+      0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35); }
+      70% { box-shadow: 0 0 0 14px rgba(124, 58, 237, 0), 0 4px 12px rgba(0, 0, 0, 0.35); }
+      100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0), 0 4px 12px rgba(0, 0, 0, 0.35); }
+    }
+
+    /* Custom Leaflet Popup Styling */
+    .leaflet-popup-content-wrapper {
+      border-radius: 14px;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.22);
+      padding: 0;
+      overflow: hidden;
+    }
+    .leaflet-popup-content {
+      margin: 0;
+      width: 300px !important;
+      font-family: 'Inter', sans-serif;
+    }
+    .leaflet-popup-tip {
+      background: #ffffff;
+    }
+
+    /* Draggable Handle */
+    .draggable-handle {
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+    .draggable-handle:active {
+      cursor: grabbing;
+    }
+
+    /* Range Slider Styling */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      background: #e2e8f0;
+      height: 6px;
+      border-radius: 999px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      margin-top: -5px;
+      background-color: #0284c7;
+      height: 16px;
+      width: 16px;
+      border-radius: 999px;
+      border: 2px solid #ffffff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
+
+  <!-- TOP HEADER -->
+  <header class="bg-white border-b border-slate-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 z-30 shadow-sm shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-600 to-teal-500 flex items-center justify-center text-white shadow-sm shrink-0">
+        <i data-lucide="map-pin" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">
+          Aluguéis & Mapa Urbano — Floripa e São José
+        </h1>
+        <p class="text-xs text-slate-500 hidden md:block">
+          75 bairros (≥ 45m² com vaga) do mais barato ao mais caro • Busca de Ruas, Agregadores e Camadas Urbanas
+        </p>
+      </div>
+    </div>
+
+    <!-- KPI Pills & Export -->
+    <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+      <div class="bg-slate-100 rounded-xl px-3 py-1.5 flex items-center gap-1.5 border border-slate-200/70">
+        <span class="text-[11px] font-medium text-slate-500 uppercase">Exibindo</span>
+        <span id="kpi-count" class="text-sm font-bold text-slate-900">75</span>
+      </div>
+      <div class="bg-emerald-50 rounded-xl px-3 py-1.5 flex items-center gap-1.5 border border-emerald-200/70">
+        <span class="text-[11px] font-medium text-emerald-700 uppercase hidden sm:inline">Menor</span>
+        <span id="kpi-min" class="text-sm font-bold text-emerald-700">R$ 1.850</span>
+      </div>
+      <div class="bg-sky-50 rounded-xl px-3 py-1.5 flex items-center gap-1.5 border border-sky-200/70">
+        <span class="text-[11px] font-medium text-sky-700 uppercase hidden sm:inline">Média</span>
+        <span id="kpi-avg" class="text-sm font-bold text-sky-700">R$ 2.976</span>
+      </div>
+      <div class="bg-rose-50 rounded-xl px-3 py-1.5 flex items-center gap-1.5 border border-rose-200/70">
+        <span class="text-[11px] font-medium text-rose-700 uppercase hidden sm:inline">Maior</span>
+        <span id="kpi-max" class="text-sm font-bold text-rose-700">R$ 5.450</span>
+      </div>
+
+      <button onclick="exportCSV()" class="bg-slate-900 hover:bg-slate-800 active:scale-95 text-white text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition shadow-sm cursor-pointer" title="Baixar tabela filtrada em CSV (Excel)">
+        <i data-lucide="download" class="w-4 h-4"></i>
+        <span class="hidden sm:inline">Exportar CSV</span>
+      </button>
+
+      <!-- Mobile toggle sidebar button -->
+      <button id="mobile-toggle-btn" onclick="toggleMobileSidebar()" class="lg:hidden bg-sky-600 text-white text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 shadow-sm cursor-pointer">
+        <i data-lucide="panel-left" class="w-4 h-4"></i>
+        <span>Painel</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- LEFT SIDEBAR -->
+    <aside id="sidebar" class="w-full lg:w-[435px] xl:w-[460px] bg-white border-r border-slate-200 flex flex-col h-full z-20 absolute lg:relative inset-0 lg:inset-auto transition-transform duration-300 translate-x-0">
+
+      <!-- 3 MAIN NAVIGATION TABS -->
+      <div class="grid grid-cols-3 gap-1.5 p-2.5 bg-slate-100 border-b border-slate-200 shrink-0">
+        <button id="tab-btn-bairros" onclick="switchSidebarTab('bairros')" class="tab-btn py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 bg-white text-slate-900 shadow-sm transition cursor-pointer">
+          <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-sky-600"></i>
+          <span>Bairros (75)</span>
+        </button>
+        <button id="tab-btn-anuncios" onclick="switchSidebarTab('anuncios')" class="tab-btn py-2 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 text-slate-600 hover:bg-white/60 transition cursor-pointer">
+          <i data-lucide="search-check" class="w-3.5 h-3.5 text-emerald-600"></i>
+          <span>Buscar Anúncios</span>
+        </button>
+        <button id="tab-btn-salvos" onclick="switchSidebarTab('salvos')" class="tab-btn py-2 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 text-slate-600 hover:bg-white/60 transition cursor-pointer">
+          <i data-lucide="bookmark" class="w-3.5 h-3.5 text-amber-500"></i>
+          <span>Salvos (<span id="saved-count-badge">0</span>)</span>
+        </button>
+      </div>
+
+      <!-- =================================================================== -->
+      <!-- TAB 1: BAIRROS (RANKING + BUSCA DE RUA + FILTROS)                   -->
+      <!-- =================================================================== -->
+      <div id="tab-panel-bairros" class="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <!-- Filters & Address Search Box -->
+        <div class="p-3 bg-slate-50/90 border-b border-slate-200 space-y-2.5 shrink-0">
+          <!-- Real Street/Address/CEP Search -->
+          <div class="relative">
+            <div class="flex gap-1.5">
+              <div class="relative flex-1">
+                <i data-lucide="navigation" class="w-3.5 h-3.5 text-violet-600 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                <input id="address-search-input" type="text" autocomplete="off" placeholder="Buscar rua, avenida ou CEP (ex: Rua Coronel Américo)..." class="w-full pl-8 pr-7 py-2 text-xs bg-white border border-violet-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 transition" />
+                <button id="clear-addr-btn" onclick="clearAddressSearch()" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer" title="Limpar endereço">
+                  <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+              <button onclick="searchAddress()" class="bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition cursor-pointer shrink-0 shadow-xs">
+                Ir
+              </button>
+            </div>
+            <!-- Autocomplete Dropdown -->
+            <div id="address-suggestions" class="hidden absolute left-0 right-12 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-40 max-h-52 overflow-y-auto divide-y divide-slate-100 text-xs"></div>
+          </div>
+
+          <!-- Neighborhood Filter & Color Mode -->
+          <div class="flex gap-2">
+            <div class="relative flex-1">
+              <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+              <input id="search-input" type="text" placeholder="Filtrar bairro na lista..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 transition" />
+            </div>
+            <select id="color-mode" class="text-xs bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="price">Cor: Faixa Preço</option>
+              <option value="region">Cor: Região</option>
+            </select>
+          </div>
+
+          <!-- Region Chips -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Região / Cidade</span>
+              <button onclick="resetFilters()" class="text-[11px] font-semibold text-sky-600 hover:underline cursor-pointer">Limpar filtros</button>
+            </div>
+            <div id="region-filters" class="flex flex-wrap gap-1">
+              <button data-region="Todas" class="region-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-900 text-white transition cursor-pointer">Todas (75)</button>
+              <button data-region="Leste" class="region-btn px-2.5 py-1 rounded-lg text-[11px] font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition cursor-pointer">Leste</button>
+              <button data-region="Sul" class="region-btn px-2.5 py-1 rounded-lg text-[11px] font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition cursor-pointer">Sul</button>
+              <button data-region="Norte" class="region-btn px-2.5 py-1 rounded-lg text-[11px] font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition cursor-pointer">Norte</button>
+              <button data-region="Centro" class="region-btn px-2.5 py-1 rounded-lg text-[11px] font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition cursor-pointer">Centro</button>
+              <button data-region="Continente" class="region-btn px-2.5 py-1 rounded-lg text-[11px] font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition cursor-pointer">Continente</button>
+              <button data-region="São José" class="region-btn px-2.5 py-1 rounded-lg text-[11px] font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition cursor-pointer">São José</button>
+            </div>
+          </div>
+
+          <!-- Profile & Max Rent Slider -->
+          <div class="grid grid-cols-2 gap-2 pt-0.5">
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Perfil Urbano</label>
+              <select id="profile-filter" class="w-full text-xs bg-white border border-slate-300 rounded-xl px-2 py-1.5 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="Todos">Todos os Perfis</option>
+                <option value="Residencial">Residencial / Familiar</option>
+                <option value="Praia">Praia / Balneário</option>
+                <option value="Comercial">Comercial / Serviços</option>
+                <option value="Gastronômico">Polo Gastronômico</option>
+                <option value="Tech">Tech / Universitário</option>
+              </select>
+            </div>
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <label class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Aluguel Máx.</label>
+                <span id="price-slider-val" class="text-[11px] font-bold text-sky-700">Até R$ 6.000</span>
+              </div>
+              <input id="price-slider" type="range" min="1900" max="6000" step="100" value="6000" class="w-full" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Table Column Header -->
+        <div class="px-4 py-2 bg-white border-b border-slate-200 flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider shrink-0">
+          <span>Ranking (Mais Barato → Mais Caro)</span>
+          <span>Aluguel Médio (≥45m²)</span>
+        </div>
+
+        <!-- Scrollable Neighborhoods List -->
+        <div id="neighborhood-list" class="flex-1 overflow-y-auto divide-y divide-slate-100"></div>
+      </div>
+
+      <!-- =================================================================== -->
+      <!-- TAB 2: BUSCAR ANÚNCIOS (AGREGADORES + IMOBILIÁRIAS)                 -->
+      <!-- =================================================================== -->
+      <div id="tab-panel-anuncios" class="hidden flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
+        <!-- Intro Banner -->
+        <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center gap-2 text-emerald-400 text-[11px] font-bold uppercase tracking-wider mb-1">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            <span>Busca Unificada em Tempo Real</span>
+          </div>
+          <h2 class="text-sm font-extrabold leading-snug">Todos os anúncios da região em um clique</h2>
+          <p class="text-[11px] text-slate-300 mt-1 leading-relaxed">
+            Configure suas preferências abaixo e abra os <strong>grandes agregadores que reúnem centenas de imobiliárias juntas</strong> já filtrados no bairro escolhido.
+          </p>
+        </div>
+
+        <!-- Search Preferences Form -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-3.5 space-y-3 shadow-xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-sky-600"></i>
+              Preferências do Imóvel
+            </span>
+            <button onclick="resetAdSearchFilters()" class="text-[11px] font-semibold text-sky-600 hover:underline cursor-pointer">Restaurar</button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Região / Cidade</label>
+              <select id="ad-region-select" onchange="onAdRegionChange()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="Todas">Todas (Floripa + SJ)</option>
+                <option value="Leste">Leste da Ilha</option>
+                <option value="Sul">Sul da Ilha</option>
+                <option value="Norte">Norte da Ilha</option>
+                <option value="Centro">Região Central</option>
+                <option value="Continente">Continente (Floripa)</option>
+                <option value="São José">São José (SC)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Bairro Específico</label>
+              <select id="ad-neighborhood-select" onchange="updateAggregatorLinks()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="">Todos da região</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Tipo de Imóvel</label>
+              <select id="ad-type-select" onchange="updateAggregatorLinks()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="todos">Todos (Apto / Casa / Kitnet)</option>
+                <option value="apartamento">Apartamento</option>
+                <option value="casa">Casa / Sobrado</option>
+                <option value="kitnet">Studio / Kitnet / Loft</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Quartos</label>
+              <select id="ad-rooms-select" onchange="updateAggregatorLinks()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="1">1+ quartos</option>
+                <option value="2" selected>2+ quartos</option>
+                <option value="3">3+ quartos</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Área Mínima</label>
+              <select id="ad-area-select" onchange="updateAggregatorLinks()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="45" selected>A partir de 45 m²</option>
+                <option value="60">A partir de 60 m²</option>
+                <option value="75">A partir de 75 m²</option>
+                <option value="90">A partir de 90 m²</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Aluguel Máximo</label>
+              <select id="ad-max-price-select" onchange="updateAggregatorLinks()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="2200">Até R$ 2.200</option>
+                <option value="2600">Até R$ 2.600</option>
+                <option value="3000" selected>Até R$ 3.000</option>
+                <option value="3500">Até R$ 3.500</option>
+                <option value="4500">Até R$ 4.500</option>
+                <option value="6000">Até R$ 6.000</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4 pt-1">
+            <label class="flex items-center gap-1.5 text-xs font-medium text-slate-700 cursor-pointer">
+              <input id="ad-parking-check" type="checkbox" checked onchange="updateAggregatorLinks()" class="rounded text-sky-600 focus:ring-sky-500 w-4 h-4" />
+              <span>🚗 Com vaga de garagem</span>
+            </label>
+            <label class="flex items-center gap-1.5 text-xs font-medium text-slate-700 cursor-pointer">
+              <input id="ad-furnished-check" type="checkbox" onchange="updateAggregatorLinks()" class="rounded text-sky-600 focus:ring-sky-500 w-4 h-4" />
+              <span>🛋️ Mobiliado</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Aggregators Grid -->
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+              1. Agregadores (Todas as Imobiliárias Juntas)
+            </h3>
+            <span id="ad-target-label" class="text-[11px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-lg">Florianópolis</span>
+          </div>
+
+          <button onclick="openTop3Aggregators()" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-sm flex items-center justify-center gap-2 transition cursor-pointer">
+            <i data-lucide="external-link" class="w-4 h-4"></i>
+            <span>Abrir Top 3 Agregadores de Uma Vez (Imovelweb + ZAP + Chaves na Mão)</span>
+          </button>
+
+          <div id="aggregators-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Local Real Estate Agencies -->
+        <div class="space-y-2 pt-1">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+            2. Principais Imobiliárias Locais (Floripa & São José)
+          </h3>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <a href="https://www.ibagy.com.br/alugar" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center justify-between transition">
+              <div>
+                <div class="font-bold text-slate-900">Ibagy Imóveis</div>
+                <div class="text-[10px] text-slate-500">Maior carteira da Grande Floripa</div>
+              </div>
+              <i data-lucide="arrow-up-right" class="w-4 h-4 text-slate-400"></i>
+            </a>
+            <a href="https://www.brogni.com.br/imoveis/para-alugar" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center justify-between transition">
+              <div>
+                <div class="font-bold text-slate-900">Brogni Imóveis</div>
+                <div class="text-[10px] text-slate-500">Forte no Continente e São José</div>
+              </div>
+              <i data-lucide="arrow-up-right" class="w-4 h-4 text-slate-400"></i>
+            </a>
+            <a href="https://www.giuliano.com.br/alugar" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center justify-between transition">
+              <div>
+                <div class="font-bold text-slate-900">Giuliano Imóveis</div>
+                <div class="text-[10px] text-slate-500">Kobrasol, Campinas e Estreito</div>
+              </div>
+              <i data-lucide="arrow-up-right" class="w-4 h-4 text-slate-400"></i>
+            </a>
+            <a href="https://www.daltonandrade.com.br/alugar" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center justify-between transition">
+              <div>
+                <div class="font-bold text-slate-900">Dalton Andrade</div>
+                <div class="text-[10px] text-slate-500">Centro, Trindade e Beira-Mar</div>
+              </div>
+              <i data-lucide="arrow-up-right" class="w-4 h-4 text-slate-400"></i>
+            </a>
+            <a href="https://www.piramideimoveis.com.br/alugar" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center justify-between transition">
+              <div>
+                <div class="font-bold text-slate-900">Pirâmide Imóveis</div>
+                <div class="text-[10px] text-slate-500">Ilha e Continente</div>
+              </div>
+              <i data-lucide="arrow-up-right" class="w-4 h-4 text-slate-400"></i>
+            </a>
+            <a href="https://www.creditoreal.com.br/alugar/sc/florianopolis" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center justify-between transition">
+              <div>
+                <div class="font-bold text-slate-900">Crédito Real</div>
+                <div class="text-[10px] text-slate-500">Locação digital sem fiador</div>
+              </div>
+              <i data-lucide="arrow-up-right" class="w-4 h-4 text-slate-400"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- =================================================================== -->
+      <!-- TAB 3: SALVOS & ANOTAÇÕES PERSISTENTES                              -->
+      <!-- =================================================================== -->
+      <div id="tab-panel-salvos" class="hidden flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
+        <!-- Quick Add Form -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-3.5 space-y-2.5 shadow-xs">
+          <h3 class="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+            <i data-lucide="bookmark-plus" class="w-4 h-4 text-amber-500"></i>
+            <span>Salvar Imóvel ou Endereço Encontrado</span>
+          </h3>
+          <div class="grid grid-cols-1 gap-2">
+            <input id="save-title-input" type="text" placeholder="Rua / Título (ex: Apto 2Q Rua Coronel Américo, 320)" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            <div class="grid grid-cols-2 gap-2">
+              <input id="save-neighborhood-input" type="text" placeholder="Bairro (ex: Barreiros)" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <input id="save-price-input" type="text" placeholder="Valor (ex: R$ 2.450 + 400 cond)" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            </div>
+            <input id="save-link-input" type="url" placeholder="Link do anúncio (opcional: QuintoAndar, ZAP, OLX...)" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            <textarea id="save-note-input" rows="2" placeholder="Suas anotações (sol da manhã, visita sábado, contato corretor...)" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+          </div>
+          <button onclick="saveCustomItem()" class="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-2.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5">
+            <i data-lucide="plus-circle" class="w-4 h-4 text-amber-400"></i>
+            <span>Adicionar aos Meus Salvos</span>
+          </button>
+        </div>
+
+        <!-- Saved Items List -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-600">Meus Endereços & Imóveis Salvos</span>
+            <span class="text-[10px] text-slate-400">Salvo no navegador</span>
+          </div>
+          <div id="saved-items-list" class="space-y-2.5">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- RIGHT MAP CONTAINER -->
+    <main class="flex-1 relative h-full w-full">
+      <div id="map" class="w-full h-full z-10"></div>
+    </main>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- FREE-FLOATING DRAGGABLE WIDGET 1: CAMADAS TEMÁTICAS DO MAPA           -->
+  <!-- ===================================================================== -->
+  <div id="layers-widget" style="position: fixed; top: 68px; right: 16px; z-index: 9999;" class="w-[275px] bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-300/90 overflow-hidden">
+    <div id="layers-drag-handle" class="draggable-handle px-3.5 py-2.5 flex items-center justify-between bg-slate-900 text-white text-xs font-bold">
+      <span class="flex items-center gap-1.5">
+        <i data-lucide="grip-vertical" class="w-3.5 h-3.5 text-slate-400"></i>
+        <i data-lucide="layers" class="w-3.5 h-3.5 text-sky-400"></i>
+        <span>Camadas Temáticas</span>
+      </span>
+      <div class="flex items-center gap-1">
+        <button onclick="toggleLayersMinimize()" class="p-1 hover:bg-slate-700 rounded-lg transition cursor-pointer" title="Minimizar/Expandir">
+          <i id="layers-min-icon" data-lucide="minus" class="w-3.5 h-3.5"></i>
+        </button>
+        <button onclick="toggleLayersWidgetVisibility(false)" class="p-1 hover:bg-rose-600 rounded-lg transition cursor-pointer" title="Ocultar painel">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </div>
+
+    <div id="layers-body" class="p-3 space-y-2 text-xs">
+      <!-- Estilo do Mapa Base -->
+      <div class="pb-2 border-b border-slate-200">
+        <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Estilo do Mapa Base</span>
+        <div class="grid grid-cols-3 gap-1">
+          <button id="basemap-esri" onclick="setBaseMap('esri')" class="basemap-btn px-1.5 py-1.5 bg-sky-600 text-white rounded-lg text-[11px] font-semibold transition cursor-pointer">Ruas</button>
+          <button id="basemap-topo" onclick="setBaseMap('topo')" class="basemap-btn px-1.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-semibold transition cursor-pointer">Relevo</button>
+          <button id="basemap-sat" onclick="setBaseMap('sat')" class="basemap-btn px-1.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-semibold transition cursor-pointer">Satélite</button>
+        </div>
+      </div>
+
+      <label class="flex items-center justify-between gap-2 p-1 rounded-lg hover:bg-slate-50 cursor-pointer">
+        <span class="flex items-center gap-2 font-medium text-slate-700">
+          <span class="w-3 h-3 rounded-full bg-sky-600 inline-block"></span>
+          Bairros & Aluguéis (75)
+        </span>
+        <input type="checkbox" id="layer-bairros" checked class="rounded text-sky-600 focus:ring-sky-500 w-4 h-4" />
+      </label>
+
+      <label class="flex items-center justify-between gap-2 p-1 rounded-lg hover:bg-slate-50 cursor-pointer">
+        <span class="flex items-center gap-2 font-medium text-slate-700">
+          <span class="w-3.5 h-1.5 rounded bg-blue-600 inline-block"></span>
+          Avenidas Beira-Mar & Orlas
+        </span>
+        <input type="checkbox" id="layer-beiramar" checked class="rounded text-sky-600 focus:ring-sky-500 w-4 h-4" />
+      </label>
+
+      <label class="flex items-center justify-between gap-2 p-1 rounded-lg hover:bg-slate-50 cursor-pointer">
+        <span class="flex items-center gap-2 font-medium text-slate-700">
+          <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+          Balneabilidade & Praias
+        </span>
+        <input type="checkbox" id="layer-balneabilidade" checked class="rounded text-sky-600 focus:ring-sky-500 w-4 h-4" />
+      </label>
+
+      <label class="flex items-center justify-between gap-2 p-1 rounded-lg hover:bg-slate-50 cursor-pointer">
+        <span class="flex items-center gap-2 font-medium text-slate-700">
+          <span class="w-3.5 h-1.5 rounded bg-amber-500 inline-block"></span>
+          Rotas Gastronômicas
+        </span>
+        <input type="checkbox" id="layer-gastronomia" checked class="rounded text-sky-600 focus:ring-sky-500 w-4 h-4" />
+      </label>
+
+      <label class="flex items-center justify-between gap-2 p-1 rounded-lg hover:bg-slate-50 cursor-pointer">
+        <span class="flex items-center gap-2 font-medium text-slate-700">
+          <span class="w-3 h-3 rounded-full bg-purple-600 inline-block"></span>
+          Zonas Residenciais / Tech / Com.
+        </span>
+        <input type="checkbox" id="layer-zonas" checked class="rounded text-sky-600 focus:ring-sky-500 w-4 h-4" />
+      </label>
+
+      <!-- Zoom Rápido -->
+      <div class="pt-2 border-t border-slate-200">
+        <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Zoom Rápido por Região</span>
+        <div class="grid grid-cols-3 gap-1">
+          <button onclick="flyRegion('Geral')" class="px-1.5 py-1 bg-slate-100 hover:bg-slate-200 rounded text-[11px] font-semibold text-slate-700 cursor-pointer">Geral</button>
+          <button onclick="flyRegion('Norte')" class="px-1.5 py-1 bg-slate-100 hover:bg-slate-200 rounded text-[11px] font-semibold text-slate-700 cursor-pointer">Norte</button>
+          <button onclick="flyRegion('Leste')" class="px-1.5 py-1 bg-slate-100 hover:bg-slate-200 rounded text-[11px] font-semibold text-slate-700 cursor-pointer">Leste</button>
+          <button onclick="flyRegion('Sul')" class="px-1.5 py-1 bg-slate-100 hover:bg-slate-200 rounded text-[11px] font-semibold text-slate-700 cursor-pointer">Sul</button>
+          <button onclick="flyRegion('Centro')" class="px-1.5 py-1 bg-slate-100 hover:bg-slate-200 rounded text-[11px] font-semibold text-slate-700 cursor-pointer">Centro</button>
+          <button onclick="flyRegion('ContinenteSJ')" class="px-1.5 py-1 bg-slate-100 hover:bg-slate-200 rounded text-[11px] font-semibold text-slate-700 cursor-pointer">Cont./SJ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compact Show Layers Button (when hidden) -->
+  <button id="show-layers-btn" onclick="toggleLayersWidgetVisibility(true)" style="position: fixed; top: 68px; right: 16px; z-index: 9998;" class="hidden bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3.5 py-2 rounded-full shadow-lg flex items-center gap-1.5 cursor-pointer">
+    <i data-lucide="layers" class="w-4 h-4 text-sky-400"></i>
+    <span>Camadas</span>
+  </button>
+
+  <!-- ===================================================================== -->
+  <!-- FREE-FLOATING DRAGGABLE WIDGET 2: LEGENDA DO MAPA                     -->
+  <!-- ===================================================================== -->
+  <div id="legend-widget" style="position: fixed; bottom: 20px; left: 475px; z-index: 9990;" class="hidden sm:block bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-300/90 text-xs w-[275px] overflow-hidden">
+    <div id="legend-drag-handle" class="draggable-handle px-3 py-2 bg-slate-100 border-b border-slate-200 flex items-center justify-between font-bold text-slate-800">
+      <span class="flex items-center gap-1.5">
+        <i data-lucide="grip-vertical" class="w-3.5 h-3.5 text-slate-400"></i>
+        <span id="legend-title">Legenda — Faixa de Aluguel</span>
+      </span>
+      <button onclick="toggleLegendVisibility(false)" class="p-1 hover:bg-slate-200 rounded-lg text-slate-500 cursor-pointer" title="Ocultar legenda">
+        <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+    <div class="p-3">
+      <div id="legend-content" class="space-y-1 text-[11px] text-slate-600">
+        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-600 inline-block"></span> Econômico: Até R$ 2.399/mês</div>
+        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-sky-600 inline-block"></span> Intermediário: R$ 2.400 a R$ 2.999</div>
+        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-600 inline-block"></span> Valorizado: R$ 3.000 a R$ 3.799</div>
+        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-rose-600 inline-block"></span> Alto Padrão: Acima de R$ 3.800</div>
+      </div>
+      <div class="mt-2 pt-2 border-t border-slate-200 space-y-1 text-[11px] text-slate-600">
+        <div class="flex items-center gap-2"><span class="w-3.5 h-1 bg-blue-600 inline-block"></span> Beira-Mar (Norte, Cont., SJ, Via Expr.)</div>
+        <div class="flex items-center gap-2"><span class="w-3.5 h-1 bg-amber-500 inline-block"></span> Rota Gastronômica Oficial / Polo</div>
+        <div class="flex items-center gap-2"><span>🏖️</span> Praia Própria • <span>⚠️</span> Baía/Ponto Impróprio</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compact Show Legend Button (when hidden) -->
+  <button id="show-legend-btn" onclick="toggleLegendVisibility(true)" style="position: fixed; bottom: 20px; left: 475px; z-index: 9989;" class="hidden bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-xs font-bold px-3.5 py-2 rounded-full shadow-lg flex items-center gap-1.5 cursor-pointer">
+    <i data-lucide="eye" class="w-4 h-4 text-sky-600"></i>
+    <span>Mostrar Legenda</span>
+  </button>
+
+  <!-- Toast Notification -->
+  <div id="toast" style="z-index: 10000;" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-xl opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2">
+    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toast-msg">Operação concluída!</span>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. COMPLETE DATASET: 75 NEIGHBORHOODS (FLORIANÓPOLIS + SÃO JOSÉ)
+    //    Ordered from CHEAPEST to MOST EXPENSIVE (Residential >= 45m2 + Parking)
+    // =========================================================================
+    const neighborhoodsData = [
+      { id: 1, name: "Forquilhas", city: "São José", region: "São José", rent: 1850, area: 52, lat: -27.5815, lng: -48.6650, tags: ["Residencial"], balneabilidade: "Sem orla (Região interiorana)", gastronomia: "Comércio local e food parks", desc: "Menor valor médio de aluguel da Grande Floripa; forte expansão de loteamentos e condomínios." },
+      { id: 2, name: "Sertão do Maruim", city: "São José", region: "São José", rent: 1890, area: 54, lat: -27.5960, lng: -48.6690, tags: ["Residencial"], balneabilidade: "Sem orla (Interior)", gastronomia: "Comércio de bairro", desc: "Condomínios residenciais recentes com excelente custo-benefício." },
+      { id: 3, name: "Potecas", city: "São José", region: "São José", rent: 1920, area: 54, lat: -27.5680, lng: -48.6520, tags: ["Residencial"], balneabilidade: "Sem orla (Interior)", gastronomia: "Comércio local", desc: "Área em crescimento rápido próximo ao Parque Linear e acesso à BR-101." },
+      { id: 4, name: "Colônia Santana", city: "São José", region: "São José", rent: 1950, area: 55, lat: -27.6080, lng: -48.6850, tags: ["Residencial"], balneabilidade: "Sem orla (Interior)", gastronomia: "Restaurantes tradicionais locais", desc: "Perfil tranquilo e familiar no eixo oeste de São José." },
+      { id: 5, name: "Areias", city: "São José", region: "São José", rent: 2050, area: 55, lat: -27.5655, lng: -48.6285, tags: ["Residencial", "Comercial"], balneabilidade: "Sem orla", gastronomia: "Avenida das Torres (bares e lanches)", desc: "Excelente oferta de serviços, mercados e acesso rápido à BR-101." },
+      { id: 6, name: "Jardim Cidade de Florianópolis", city: "São José", region: "São José", rent: 2080, area: 54, lat: -27.5745, lng: -48.6225, tags: ["Residencial"], balneabilidade: "Sem orla", gastronomia: "Próximo à Av. das Torres", desc: "Bairro residencial plano e bem conectado ao Estreito e Barreiros." },
+      { id: 7, name: "Monte Cristo", city: "Florianópolis", region: "Continente", rent: 2090, area: 52, lat: -27.5895, lng: -48.5945, tags: ["Residencial"], balneabilidade: "Sem orla direta", gastronomia: "Comércio popular local", desc: "Opção mais econômica de Florianópolis, colado à Via Expressa e às pontes." },
+      { id: 8, name: "Tapera da Base", city: "Florianópolis", region: "Sul", rent: 2100, area: 54, lat: -27.6765, lng: -48.5545, tags: ["Residencial", "Praia"], balneabilidade: "Baía Sul (Águas calmas)", gastronomia: "Ranchos e bares de praia", desc: "Bairro mais acessível do Sul da Ilha, próximo à Base Aérea e Aeroporto." },
+      { id: 9, name: "Fazenda Santo Antônio", city: "São José", region: "São José", rent: 2120, area: 55, lat: -27.6185, lng: -48.6425, tags: ["Residencial", "Comercial"], balneabilidade: "Sem orla", gastronomia: "Comércio de bairro", desc: "Fácil acesso à BR-101 e ao Centro Histórico de São José." },
+      { id: 10, name: "Vargem do Bom Jesus", city: "Florianópolis", region: "Norte", rent: 2150, area: 55, lat: -27.4345, lng: -48.4365, tags: ["Residencial"], balneabilidade: "Sem orla (A 3 km de Canasvieiras/Ingleses)", gastronomia: "Comércio na SC-403", desc: "Alternativa mais barata no Norte da Ilha, entre Canasvieiras e Ingleses." },
+      { id: 11, name: "Picadas do Sul", city: "São José", region: "São José", rent: 2180, area: 56, lat: -27.6125, lng: -48.6345, tags: ["Residencial"], balneabilidade: "Sem orla", gastronomia: "Próximo a Campinas/Kobrasol", desc: "Bairro residencial tradicional colado ao eixo Kobrasol/BR-101." },
+      { id: 12, name: "Ipiranga", city: "São José", region: "São José", rent: 2200, area: 55, lat: -27.5715, lng: -48.6355, tags: ["Residencial"], balneabilidade: "Sem orla", gastronomia: "Comércio da Av. das Torres", desc: "Boa oferta de apartamentos de 2 dormitórios com vaga." },
+      { id: 13, name: "Forquilhinha", city: "São José", region: "São José", rent: 2220, area: 56, lat: -27.6025, lng: -48.6385, tags: ["Residencial", "Comercial"], balneabilidade: "Sem orla", gastronomia: "Comércio local ativo", desc: "Muito procurado por famílias pela proximidade com Campinas e BR-101." },
+      { id: 14, name: "Serraria", city: "São José", region: "São José", rent: 2250, area: 56, lat: -27.5545, lng: -48.6325, tags: ["Residencial", "Comercial"], balneabilidade: "Orla norte (sem balneabilidade)", gastronomia: "Comércio na Av. Leoberto Leal", desc: "Divisa norte de São José com Biguaçu; forte oferta de serviços." },
+      { id: 15, name: "Real Parque", city: "São José", region: "São José", rent: 2260, area: 56, lat: -27.5625, lng: -48.6395, tags: ["Residencial"], balneabilidade: "Sem orla", gastronomia: "Comércio local", desc: "Loteamento planejado, tranquilo e próximo à Serraria e Areias." },
+      { id: 16, name: "Rio Vermelho", city: "Florianópolis", region: "Leste", rent: 2290, area: 56, lat: -27.4985, lng: -48.4265, tags: ["Residencial", "Praia"], balneabilidade: "Praia do Moçambique (Própria - Parque Estadual)", gastronomia: "Comércio na Rod. João Gualberto Soares", desc: "Opção mais econômica do Leste da Ilha, com muitas casas e condomínios." },
+      { id: 17, name: "Roçado", city: "São José", region: "São José", rent: 2320, area: 56, lat: -27.6045, lng: -48.6245, tags: ["Residencial", "Comercial"], balneabilidade: "Sem orla direta", gastronomia: "Colado ao Kobrasol", desc: "Localização estratégica entre Kobrasol, Bosque das Mansões e BR-101." },
+      { id: 18, name: "Coloninha", city: "Florianópolis", region: "Continente", rent: 2350, area: 55, lat: -27.5845, lng: -48.5915, tags: ["Residencial"], balneabilidade: "Sem orla", gastronomia: "Próximo ao Estreito", desc: "Bairro residencial tradicional do Continente com acesso rápido às pontes." },
+      { id: 19, name: "Jardim Capoeiras", city: "Florianópolis", region: "Continente", rent: 2380, area: 55, lat: -27.5985, lng: -48.5925, tags: ["Residencial"], balneabilidade: "Sem orla", gastronomia: "Comércio da Av. Ivo Silveira", desc: "Ótimo custo-benefício no Continente, vizinho a Capoeiras e Coqueiros." },
+      { id: 20, name: "Bela Vista", city: "São José", region: "São José", rent: 2390, area: 58, lat: -27.5835, lng: -48.6315, tags: ["Residencial"], balneabilidade: "Sem orla", gastronomia: "Próximo ao Shopping Itaguaçu", desc: "Bairro arborizado e residencial de fácil acesso." },
+      { id: 21, name: "Vargem Grande", city: "Florianópolis", region: "Norte", rent: 2400, area: 58, lat: -27.4545, lng: -48.4425, tags: ["Residencial"], balneabilidade: "Sem orla (Interior do Norte)", gastronomia: "Comércio local", desc: "Ambiente calmo rodeado de verde entre Ratones e Ingleses." },
+      { id: 22, name: "Capoeiras", city: "Florianópolis", region: "Continente", rent: 2420, area: 58, lat: -27.5955, lng: -48.5875, tags: ["Residencial", "Comercial"], balneabilidade: "Sem orla", gastronomia: "Comércio e serviços na Av. Ivo Silveira", desc: "Um dos melhores equilíbrios entre preço e mobilidade em Florianópolis." },
+      { id: 23, name: "Nossa Senhora do Rosário", city: "São José", region: "São José", rent: 2450, area: 57, lat: -27.5785, lng: -48.6165, tags: ["Residencial"], balneabilidade: "Sem orla", gastronomia: "Próximo a Barreiros e Shopping Itaguaçu", desc: "Excelente localização na divisa com Florianópolis." },
+      { id: 24, name: "Barreiros", city: "São José", region: "São José", rent: 2480, area: 58, lat: -27.5845, lng: -48.6135, tags: ["Comercial", "Residencial"], balneabilidade: "Orla sem balneabilidade", gastronomia: "Av. Leoberto Leal (polo gastronômico local)", desc: "Principal eixo comercial da zona norte de São José; vizinho ao Estreito." },
+      { id: 25, name: "Costeira do Pirajubaé", city: "Florianópolis", region: "Centro", rent: 2490, area: 56, lat: -27.6245, lng: -48.5265, tags: ["Residencial"], balneabilidade: "Baía Sul (Imprópria)", gastronomia: "Comércio local e acesso rápido ao Centro", desc: "Bairro mais econômico da região central, na saída da Via Expressa Sul." },
+      { id: 26, name: "José Mendes", city: "Florianópolis", region: "Centro", rent: 2520, area: 55, lat: -27.6015, lng: -48.5455, tags: ["Residencial"], balneabilidade: "Baía Sul (Imprópria)", gastronomia: "Colado ao Centro", desc: "Localização centralíssima na saída do Túnel Antonieta de Barros." },
+      { id: 27, name: "Praia Comprida", city: "São José", region: "São José", rent: 2550, area: 60, lat: -27.6075, lng: -48.6195, tags: ["Residencial", "Comercial"], balneabilidade: "Beira-Mar de SJ (Imprópria)", gastronomia: "Próximo à Ponta de Baixo", desc: "Abriga o Centro Histórico de São José e trecho da Beira-Mar." },
+      { id: 28, name: "Ingleses", city: "Florianópolis", region: "Norte", rent: 2580, area: 60, lat: -27.4365, lng: -48.3985, tags: ["Praia", "Comercial", "Residencial"], balneabilidade: "Praia dos Ingleses (Própria no canto norte/central)", gastronomia: "Centrinho dos Ingleses (grande oferta)", desc: "Maior bairro da cidade em população, com comércio completo o ano inteiro." },
+      { id: 29, name: "Carianos", city: "Florianópolis", region: "Sul", rent: 2590, area: 58, lat: -27.6585, lng: -48.5425, tags: ["Residencial"], balneabilidade: "Sem orla de banho", gastronomia: "Comércio próximo ao Aeroporto", desc: "Bairro plano e familiar ao lado do Aeroporto Internacional e Ressacada." },
+      { id: 30, name: "Abraão", city: "Florianópolis", region: "Continente", rent: 2620, area: 60, lat: -27.6015, lng: -48.5845, tags: ["Residencial"], balneabilidade: "Sem orla direta", gastronomia: "Vizinho à Via Gastronômica de Coqueiros", desc: "Bairro estritamente residencial, calmo e arborizado no Continente." },
+      { id: 31, name: "Centro Histórico (SJ)", city: "São José", region: "São José", rent: 2650, area: 62, lat: -27.6135, lng: -48.6255, tags: ["Residencial", "Gastronômico"], balneabilidade: "Baía Sul (Imprópria)", gastronomia: "Polos culturais e cafés históricos", desc: "Charme histórico à beira da Baía Sul com boa infraestrutura urbana." },
+      { id: 32, name: "Bom Abrigo", city: "Florianópolis", region: "Continente", rent: 2680, area: 62, lat: -27.6115, lng: -48.5815, tags: ["Residencial"], balneabilidade: "Orla tranquila (Baía Sul)", gastronomia: "Colado à rota de Coqueiros e Itaguaçu", desc: "Pequeno bairro residencial nobre e muito tranquilo na orla continental." },
+      { id: 33, name: "Ponta de Baixo", city: "São José", region: "São José", rent: 2720, area: 64, lat: -27.6175, lng: -48.6225, tags: ["Gastronômico", "Residencial"], balneabilidade: "Baía Sul (Imprópria)", gastronomia: "Via Gastronômica de Ponta de Baixo", desc: "Famosa pelos restaurantes de frutos do mar frente ao mar." },
+      { id: 34, name: "Armação", city: "Florianópolis", region: "Sul", rent: 2750, area: 62, lat: -27.7485, lng: -48.5045, tags: ["Praia", "Residencial"], balneabilidade: "Praia da Armação e Matadeiro (Próprias)", gastronomia: "Restaurantes frente-mar na orla", desc: "Comunidade praiana tradicional com acesso à trilha da Lagoinha do Leste." },
+      { id: 35, name: "Sambaqui", city: "Florianópolis", region: "Norte", rent: 2790, area: 64, lat: -27.4935, lng: -48.5325, tags: ["Gastronômico", "Residencial"], balneabilidade: "Baía Norte (Águas calmas)", gastronomia: "Rota Gastronômica do Sol Poente (ostras)", desc: "Vila açoriana charmosa com pôr do sol famoso na Baía Norte." },
+      { id: 36, name: "Carvoeira", city: "Florianópolis", region: "Centro", rent: 2820, area: 54, lat: -27.6045, lng: -48.5225, tags: ["Tech", "Residencial"], balneabilidade: "Sem orla", gastronomia: "Polo universitário UFSC", desc: "Colado à UFSC; altíssima liquidez e procura por estudantes e professores." },
+      { id: 37, name: "Saco dos Limões", city: "Florianópolis", region: "Centro", rent: 2850, area: 58, lat: -27.6085, lng: -48.5365, tags: ["Residencial"], balneabilidade: "Baía Sul (Imprópria)", gastronomia: "Comércio tradicional local", desc: "Acesso rápido tanto ao Centro quanto à UFSC e Sul da Ilha." },
+      { id: 38, name: "Pantanal", city: "Florianópolis", region: "Centro", rent: 2890, area: 58, lat: -27.6065, lng: -48.5165, tags: ["Tech", "Residencial"], balneabilidade: "Sem orla", gastronomia: "Bares e restaurantes universitários", desc: "Vizinho ao campus da UFSC e Eletrosul, com ótimos apartamentos." },
+      { id: 39, name: "Jardim Atlântico", city: "Florianópolis", region: "Continente", rent: 2920, area: 60, lat: -27.5815, lng: -48.6035, tags: ["Residencial"], balneabilidade: "Sem orla", gastronomia: "Próximo a Barreiros e Estreito", desc: "Muitos condomínios modernos na divisa entre Florianópolis e São José." },
+      { id: 40, name: "Canasvieiras", city: "Florianópolis", region: "Norte", rent: 2950, area: 62, lat: -27.4285, lng: -48.4635, tags: ["Praia", "Comercial"], balneabilidade: "Praia de Canasvieiras (Própria na maior parte)", gastronomia: "Centrinho turístico muito movimentado", desc: "Balneário com infraestrutura completa, comércio ativo e aluguel anual competitivo." },
+      { id: 41, name: "Balneário", city: "Florianópolis", region: "Continente", rent: 2980, area: 64, lat: -27.5785, lng: -48.5845, tags: ["Residencial"], balneabilidade: "Beira-Mar Continental (Imprópria)", gastronomia: "Cafés e bistrôs próximos à Beira-Mar", desc: "Bairro nobre, plano e arborizado junto à Beira-Mar Continental." },
+      { id: 42, name: "Itaguaçu", city: "Florianópolis", region: "Continente", rent: 2990, area: 66, lat: -27.6095, lng: -48.5775, tags: ["Gastronômico", "Residencial"], balneabilidade: "Praia das Pedras (Baía Sul)", gastronomia: "Continuação da Via Gastronômica de Coqueiros", desc: "Orla icônica com formações rochosas e imóveis amplos." },
+      { id: 43, name: "Kobrasol", city: "São José", region: "São José", rent: 3020, area: 64, lat: -27.5935, lng: -48.6135, tags: ["Comercial", "Residencial", "Gastronômico"], balneabilidade: "Beira-Mar de SJ (Imprópria)", gastronomia: "Av. Central do Kobrasol e Beira-Mar", desc: "Coração econômico de São José; permite fazer tudo a pé." },
+      { id: 44, name: "Canto", city: "Florianópolis", region: "Continente", rent: 3050, area: 62, lat: -27.5905, lng: -48.5775, tags: ["Residencial"], balneabilidade: "Beira-Mar Continental (Imprópria)", gastronomia: "Próximo ao Estreito e Coqueiros", desc: "Colado às pontes de acesso à Ilha e à Beira-Mar Continental." },
+      { id: 45, name: "Vargem Pequena", city: "Florianópolis", region: "Norte", rent: 3080, area: 68, lat: -27.4725, lng: -48.4685, tags: ["Residencial"], balneabilidade: "Sem orla (Acesso pela SC-401)", gastronomia: "Cafés e restaurantes na SC-401", desc: "Condomínios horizontais e casas amplas em meio à natureza." },
+      { id: 46, name: "Ponta das Canas", city: "Florianópolis", region: "Norte", rent: 3100, area: 64, lat: -27.4025, lng: -48.4315, tags: ["Praia", "Residencial"], balneabilidade: "Própria para banho (águas calmas)", gastronomia: "Restaurantes pé na areia", desc: "Ambiente familiar e tranquilo no extremo norte da Ilha." },
+      { id: 47, name: "Ratones", city: "Florianópolis", region: "Norte", rent: 3120, area: 72, lat: -27.4985, lng: -48.4855, tags: ["Residencial"], balneabilidade: "Sem orla (Vale rural)", gastronomia: "Gastronomia rural e artesanal", desc: "Vale verde com chácaras e condomínios fechados de alto padrão." },
+      { id: 48, name: "Campinas", city: "São José", region: "São José", rent: 3150, area: 66, lat: -27.5985, lng: -48.6135, tags: ["Comercial", "Residencial"], balneabilidade: "Beira-Mar de SJ (Imprópria)", gastronomia: "Polo gastronômico e comercial junto ao Kobrasol", desc: "Bairro mais valorizado de São José, com prédios modernos e serviços completos." },
+      { id: 49, name: "Estreito", city: "Florianópolis", region: "Continente", rent: 3180, area: 64, lat: -27.5845, lng: -48.5815, tags: ["Comercial", "Residencial"], balneabilidade: "Beira-Mar Continental (Imprópria)", gastronomia: "Rua Fúlvio Aducci e Beira-Mar Continental", desc: "Principal polo comercial do Continente, com acesso imediato às pontes." },
+      { id: 50, name: "Alto Ribeirão", city: "Florianópolis", region: "Sul", rent: 3200, area: 68, lat: -27.6985, lng: -48.5485, tags: ["Residencial"], balneabilidade: "Sem orla direta (Próximo à Baía Sul)", gastronomia: "Próximo à rota do Ribeirão da Ilha", desc: "Área verde e tranquila com casas e vistas panorâmicas." },
+      { id: 51, name: "Pântano do Sul", city: "Florianópolis", region: "Sul", rent: 3220, area: 66, lat: -27.7815, lng: -48.5135, tags: ["Praia", "Gastronômico"], balneabilidade: "Praia do Pântano do Sul e Açores (Próprias)", gastronomia: "Clássicos restaurantes de frutos do mar na praia", desc: "Tradicional vila de pescadores no extremo sul, muito preservada." },
+      { id: 52, name: "Cachoeira do Bom Jesus", city: "Florianópolis", region: "Norte", rent: 3250, area: 65, lat: -27.4245, lng: -48.4325, tags: ["Praia", "Residencial"], balneabilidade: "Praia da Cachoeira (Própria)", gastronomia: "Comércio e restaurantes na Av. Luiz Boiteux Piazza", desc: "Forte crescimento de empreendimentos residenciais modernos." },
+      { id: 53, name: "Ribeirão da Ilha", city: "Florianópolis", region: "Sul", rent: 3280, area: 68, lat: -27.7215, lng: -48.5615, tags: ["Gastronômico", "Residencial"], balneabilidade: "Baía Sul (Águas calmas)", gastronomia: "Principal polo de ostras do Brasil", desc: "Freguesia histórica açoriana com arquitetura preservada e tranquilidade." },
+      { id: 54, name: "Santinho", city: "Florianópolis", region: "Norte", rent: 3320, area: 66, lat: -27.4565, lng: -48.3785, tags: ["Praia", "Residencial"], balneabilidade: "Praia do Santinho (Própria - mar aberto)", gastronomia: "Restaurantes e resorts locais", desc: "Canto reservado e sofisticado ao lado das dunas e costões." },
+      { id: 55, name: "Trindade", city: "Florianópolis", region: "Centro", rent: 3350, area: 60, lat: -27.5985, lng: -48.5215, tags: ["Tech", "Comercial", "Residencial"], balneabilidade: "Sem orla", gastronomia: "Shopping Trindade e corredor gastronômico", desc: "Coração universitário da Ilha; excelente infraestrutura e transporte." },
+      { id: 56, name: "Coqueiros", city: "Florianópolis", region: "Continente", rent: 3390, area: 68, lat: -27.6045, lng: -48.5765, tags: ["Gastronômico", "Residencial"], balneabilidade: "Orla de Coqueiros (Imprópria para banho)", gastronomia: "Via Gastronômica de Coqueiros (referência na cidade)", desc: "Bairro mais nobre do Continente, com parques à beira-mar e gastronomia." },
+      { id: 57, name: "Daniela", city: "Florianópolis", region: "Norte", rent: 3450, area: 72, lat: -27.4485, lng: -48.5325, tags: ["Praia", "Residencial"], balneabilidade: "Praia da Daniela (Própria - mar calmo)", gastronomia: "Quiosques e restaurantes familiares", desc: "Bairro exclusivamente residencial de casas arborizadas junto ao pontal." },
+      { id: 58, name: "Moçambique", city: "Florianópolis", region: "Leste", rent: 3480, area: 70, lat: -27.5265, lng: -48.4145, tags: ["Praia", "Residencial"], balneabilidade: "Praia do Moçambique (100% Própria)", gastronomia: "Acesso pela Barra da Lagoa ou Rio Vermelho", desc: "Entorno do Parque Estadual do Rio Vermelho; natureza intocada." },
+      { id: 59, name: "Costa da Lagoa", city: "Florianópolis", region: "Leste", rent: 3500, area: 72, lat: -27.5685, lng: -48.4685, tags: ["Gastronômico", "Residencial"], balneabilidade: "Lagoa (Pontos próprios próximos às cachoeiras)", gastronomia: "Restaurantes típicos acessíveis por barco/trilha", desc: "Comunidade isolada sem carros; acesso apenas por barco ou trilha." },
+      { id: 60, name: "Itacorubi", city: "Florianópolis", region: "Centro", rent: 3550, area: 64, lat: -27.5865, lng: -48.5085, tags: ["Tech", "Comercial", "Residencial"], balneabilidade: "Sem orla (Manguezal do Itacorubi)", gastronomia: "Polo gastronômico da Av. Madre Benvenuta", desc: "Hub corporativo, tecnológico e universitário (UDESC/EPAGRI)." },
+      { id: 61, name: "Córrego Grande", city: "Florianópolis", region: "Centro", rent: 3620, area: 66, lat: -27.5965, lng: -48.5065, tags: ["Residencial", "Tech"], balneabilidade: "Sem orla (Parque Linear e Horto Florestal)", gastronomia: "Cafés e bistrôs no entorno do parque", desc: "Um dos bairros mais desejados por famílias na região central." },
+      { id: 62, name: "Santa Mônica", city: "Florianópolis", region: "Centro", rent: 3680, area: 68, lat: -27.5915, lng: -48.5155, tags: ["Gastronômico", "Residencial"], balneabilidade: "Sem orla", gastronomia: "Av. Madre Benvenuta (alta gastronomia e bares)", desc: "Bairro nobre, plano e arborizado entre Trindade e Itacorubi." },
+      { id: 63, name: "Monte Verde", city: "Florianópolis", region: "Centro", rent: 3720, area: 66, lat: -27.5585, lng: -48.4985, tags: ["Residencial", "Tech"], balneabilidade: "Sem orla", gastronomia: "Próximo ao Floripa Shopping e SC-401", desc: "Residencial tranquilo ao lado do polo tecnológico da SC-401." },
+      { id: 64, name: "Barra da Lagoa", city: "Florianópolis", region: "Leste", rent: 3790, area: 66, lat: -27.5735, lng: -48.4235, tags: ["Praia", "Gastronômico"], balneabilidade: "Praia da Barra e Piscinas Naturais (Próprias)", gastronomia: "Restaurantes à beira do canal e na praia", desc: "Charme pesqueiro, canais navegáveis e forte procura o ano todo." },
+      { id: 65, name: "Rio Tavares", city: "Florianópolis", region: "Sul", rent: 3850, area: 66, lat: -27.6485, lng: -48.4925, tags: ["Residencial", "Praia"], balneabilidade: "Acesso rápido à Praia do Campeche e Joaquina", gastronomia: "Multi Open Shopping e cafés modernos", desc: "Eixo estratégico que conecta Leste, Sul e Centro da Ilha." },
+      { id: 66, name: "Saco Grande", city: "Florianópolis", region: "Centro", rent: 3920, area: 68, lat: -27.5515, lng: -48.5045, tags: ["Tech", "Comercial", "Residencial"], balneabilidade: "Baía Norte (Imprópria)", gastronomia: "Floripa Shopping e gastronomia corporativa", desc: "Coração do polo tecnológico ACATE / Primavera Garden na SC-401." },
+      { id: 67, name: "Lagoa da Conceição", city: "Florianópolis", region: "Leste", rent: 3990, area: 68, lat: -27.6035, lng: -48.4645, tags: ["Gastronômico", "Praia", "Residencial"], balneabilidade: "Centrinho impróprio; Joaquina/Mole próximas próprias", gastronomia: "Av. das Rendeiras e Centrinho (vida noturna)", desc: "Epicentro turístico, cultural e boêmio da Ilha de Santa Catarina." },
+      { id: 68, name: "Praia Brava", city: "Florianópolis", region: "Norte", rent: 4050, area: 70, lat: -27.3985, lng: -48.4145, tags: ["Praia", "Residencial"], balneabilidade: "Praia Brava (Própria - mar cristalino)", gastronomia: "Beach clubs e restaurantes na orla", desc: "Condomínios de alto padrão frente-mar entre cercanias de morros verdes." },
+      { id: 69, name: "Centro", city: "Florianópolis", region: "Centro", rent: 4100, area: 66, lat: -27.5945, lng: -48.5535, tags: ["Comercial", "Residencial", "Gastronômico"], balneabilidade: "Beira-Mar Norte (Imprópria para banho)", gastronomia: "Mercado Público, Rua Bocaiúva e Beira-Mar", desc: "Maior oferta de serviços da capital; na Beira-Mar supera R$ 6.500/mês." },
+      { id: 70, name: "João Paulo", city: "Florianópolis", region: "Centro", rent: 4180, area: 70, lat: -27.5685, lng: -48.5165, tags: ["Residencial"], balneabilidade: "Baía Norte (Vista panorâmica; imprópria)", gastronomia: "Próximo à SC-401 e Beira-Mar Norte", desc: "Bairro residencial nobre com vista para o mar e fácil acesso à SC-401." },
+      { id: 71, name: "Santo Antônio de Lisboa", city: "Florianópolis", region: "Norte", rent: 4250, area: 72, lat: -27.5085, lng: -48.5185, tags: ["Gastronômico", "Residencial"], balneabilidade: "Baía Norte (Orla histórica)", gastronomia: "Principal polo gastronômico açoriano da Ilha", desc: "Arquitetura colonial, feiras culturais e condomínios de alto padrão." },
+      { id: 72, name: "Praia do Forte", city: "Florianópolis", region: "Norte", rent: 4350, area: 74, lat: -27.4345, lng: -48.5165, tags: ["Praia", "Residencial"], balneabilidade: "Praia do Forte (Própria - águas calmas)", gastronomia: "Restaurantes exclusivos na praia", desc: "Enclave exclusivo e reservado entre Jurerê Internacional e Daniela." },
+      { id: 73, name: "Campeche", city: "Florianópolis", region: "Sul", rent: 4490, area: 70, lat: -27.6825, lng: -48.4845, tags: ["Praia", "Residencial", "Gastronômico"], balneabilidade: "Praia do Campeche (Própria - mar aberto)", gastronomia: "Av. Pequeno Príncipe e Novo Campeche", desc: "Bairro mais desejado do Sul da Ilha, com empreendimentos boutique." },
+      { id: 74, name: "Agronômica", city: "Florianópolis", region: "Centro", rent: 4650, area: 72, lat: -27.5785, lng: -48.5415, tags: ["Residencial", "Comercial"], balneabilidade: "Beira-Mar Norte (Imprópria para banho)", gastronomia: "Alta gastronomia no eixo Beira-Mar Norte", desc: "Um dos metros quadrados mais valorizados da capital, junto à Beira-Mar." },
+      { id: 75, name: "Morro das Pedras", city: "Florianópolis", region: "Sul", rent: 4720, area: 74, lat: -27.7165, lng: -48.4985, tags: ["Praia", "Residencial"], balneabilidade: "Praia do Morro das Pedras (Própria)", gastronomia: "Próximo ao Campeche e Armação", desc: "Casas e condomínios exclusivos frente-mar de alto padrão." },
+      { id: 76, name: "Cacupé", city: "Florianópolis", region: "Norte", rent: 4890, area: 76, lat: -27.5425, lng: -48.5225, tags: ["Residencial", "Gastronômico"], balneabilidade: "Baía Norte (Vista cinematográfica)", gastronomia: "Restaurantes sofisticados frente-mar", desc: "Condomínios fechados de luxo com vista permanente para o pôr do sol." },
+      { id: 77, name: "Jurerê", city: "Florianópolis", region: "Norte", rent: 5450, area: 78, lat: -27.4395, lng: -48.4965, tags: ["Praia", "Residencial", "Gastronômico"], balneabilidade: "Praia de Jurerê (Própria - águas calmas)", gastronomia: "Jurerê Open Shopping e beach clubs", desc: "Maior valor médio da cidade (englobando Jurerê Internacional e Tradicional)." }
+    ];
+
+    // =========================================================================
+    // 2. INITIALIZE LEAFLET MAP (ESRI FREE TILES - NO 403 / NO API KEY)
+    // =========================================================================
+    const map = L.map('map', {
+      center: [-27.595, -48.555],
+      zoom: 12,
+      zoomControl: false
+    });
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    const baseMaps = {
+      esri: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ',
+        maxZoom: 19
+      }),
+      topo: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri',
+        maxZoom: 19
+      }),
+      sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Maxar, Earthstar Geographics',
+        maxZoom: 19
+      })
+    };
+
+    let activeBaseMap = baseMaps.esri.addTo(map);
+
+    function setBaseMap(key) {
+      if (!baseMaps[key]) return;
+      map.removeLayer(activeBaseMap);
+      activeBaseMap = baseMaps[key].addTo(map);
+
+      document.querySelectorAll('.basemap-btn').forEach(btn => {
+        btn.classList.remove('bg-sky-600', 'text-white');
+        btn.classList.add('bg-slate-100', 'hover:bg-slate-200', 'text-slate-700');
+      });
+      const activeBtn = document.getElementById(`basemap-${key}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-slate-100', 'hover:bg-slate-200', 'text-slate-700');
+        activeBtn.classList.add('bg-sky-600', 'text-white');
+      }
+    }
+
+    // Layer Groups
+    const layers = {
+      bairros: L.layerGroup().addTo(map),
+      beiramar: L.layerGroup().addTo(map),
+      balneabilidade: L.layerGroup().addTo(map),
+      gastronomia: L.layerGroup().addTo(map),
+      zonas: L.layerGroup().addTo(map),
+      addressPin: L.layerGroup().addTo(map)
+    };
+
+    // =========================================================================
+    // 3. THEMATIC LAYERS (BEIRA-MAR, BALNEABILIDADE, GASTRONOMIA, ZONAS)
+    // =========================================================================
+    function buildThematicLayers() {
+      // A. Beira-Mar & Orlas
+      const beiraMarLines = [
+        {
+          name: "Av. Jornalista Rubens de Arruda Ramos (Beira-Mar Norte)",
+          desc: "Principal cartão-postal urbano de Florianópolis (7 km de ciclovia, lazer e prédios de luxo). Água da baía imprópria para banho.",
+          coords: [[-27.5925, -48.5625], [-27.5865, -48.5545], [-27.5805, -48.5465], [-27.5755, -48.5365], [-27.5720, -48.5260]]
+        },
+        {
+          name: "Av. Cláudio Alvarado / Beira-Mar Continental",
+          desc: "Orla revitalizada do Estreito/Balneário/Canto com ciclovia, quadras esportivas e vista frontal para a Ponte Hercílio Luz.",
+          coords: [[-27.5905, -48.5735], [-27.5855, -48.5765], [-27.5805, -48.5795], [-27.5755, -48.5835]]
+        },
+        {
+          name: "Av. Acioni Souza Filho (Beira-Mar de São José)",
+          desc: "Principal eixo de lazer, corrida e eventos de São José (Campinas, Kobrasol e Praia Comprida).",
+          coords: [[-27.5885, -48.6035], [-27.5945, -48.6075], [-27.6015, -48.6125], [-27.6085, -48.6165]]
+        },
+        {
+          name: "Via Expressa Sul (Av. Gov. Aderbal Ramos da Silva)",
+          desc: "Corredor expresso de ligação entre o Centro, Túnel Antonieta de Barros, Costeira e Sul da Ilha/Aeroporto.",
+          coords: [[-27.6035, -48.5485], [-27.6145, -48.5415], [-27.6285, -48.5335], [-27.6445, -48.5285]]
+        }
+      ];
+
+      beiraMarLines.forEach(line => {
+        L.polyline(line.coords, { color: '#2563eb', weight: 5, opacity: 0.85, lineCap: 'round' })
+          .bindPopup(`<div class="p-3"><span class="text-[10px] font-bold uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Beira-Mar / Orla</span><h4 class="font-bold text-sm text-slate-900 mt-1">${line.name}</h4><p class="text-xs text-slate-600 mt-1">${line.desc}</p></div>`)
+          .addTo(layers.beiramar);
+      });
+
+      // B. Balneabilidade & Praias
+      const beaches = [
+        { name: "Praia de Jurerê", status: "propria", lat: -27.4365, lng: -48.4980, info: "Águas calmas, quentes e excelente balneabilidade histórica." },
+        { name: "Praia da Daniela", status: "propria", lat: -27.4455, lng: -48.5345, info: "Pontal de águas tranquilas e própria para banho." },
+        { name: "Praia do Forte", status: "propria", lat: -27.4325, lng: -48.5175, info: "Enseada calma junto à Fortaleza histórica; água limpa." },
+        { name: "Praia Brava", status: "propria", lat: -27.3965, lng: -48.4115, info: "Mar aberto cristalino e próprio para banho e surfe." },
+        { name: "Ponta das Canas & Lagoinha", status: "propria", lat: -27.3985, lng: -48.4295, info: "Excelente balneabilidade e águas calmas no extremo norte." },
+        { name: "Praia do Santinho", status: "propria", lat: -27.4585, lng: -48.3745, info: "Mar oceânico limpo, dunas e trilhas arqueológicas." },
+        { name: "Praia dos Ingleses (Canto Norte)", status: "propria", lat: -27.4310, lng: -48.3915, info: "Trecho norte/central próprio; evitar foz do Rio Capivari." },
+        { name: "Praia do Moçambique", status: "propria", lat: -27.5280, lng: -48.4080, info: "Maior praia da Ilha (parque estadual), 100% preservada e própria." },
+        { name: "Barra da Lagoa", status: "propria", lat: -27.5715, lng: -48.4205, info: "Praia e piscinas naturais com ótima qualidade de água." },
+        { name: "Praia Mole & Galheta", status: "propria", lat: -27.6015, lng: -48.4315, info: "Praias oceânicas preservadas e próprias para banho." },
+        { name: "Praia da Joaquina", status: "propria", lat: -27.6285, lng: -48.4475, info: "Famosa pelas dunas e ondas; balneabilidade excelente." },
+        { name: "Praia do Campeche", status: "propria", lat: -27.6845, lng: -48.4810, info: "Mar aberto cristalino frente à Ilha do Campeche." },
+        { name: "Praia da Armação & Matadeiro", status: "propria", lat: -27.7495, lng: -48.5015, info: "Águas limpas no Sul da Ilha com acesso ao Matadeiro." },
+        { name: "Pântano do Sul & Açores", status: "propria", lat: -27.7835, lng: -48.5110, info: "Enseada tranquila e própria para banho." },
+        { name: "Canasvieiras (Trecho Central)", status: "atencao", lat: -27.4255, lng: -48.4655, info: "Geralmente própria, mas requer atenção perto de córregos no verão." },
+        { name: "Centrinho da Lagoa da Conceição", status: "impropria", lat: -27.6035, lng: -48.4635, info: "Ponto interno da lagoa historicamente impróprio para banho." },
+        { name: "Beira-Mar Norte (Baía Norte)", status: "impropria", lat: -27.5815, lng: -48.5495, info: "Baía interna imprópria para banho (uso para esportes náuticos)." },
+        { name: "Orla de Coqueiros / Praia do Meio", status: "impropria", lat: -27.6055, lng: -48.5745, info: "Baía Sul imprópria para banho; ideal para caminhadas e gastronomia." },
+        { name: "Beira-Mar de São José", status: "impropria", lat: -27.5965, lng: -48.6065, info: "Orla urbanizada imprópria para banho." }
+      ];
+
+      beaches.forEach(b => {
+        const isGood = b.status === "propria";
+        const isWarn = b.status === "atencao";
+        const emoji = isGood ? "🏖️" : (isWarn ? "🟡" : "⚠️");
+        const bgClass = isGood ? "bg-emerald-500" : (isWarn ? "bg-amber-400" : "bg-rose-500");
+        const badgeText = isGood ? "Própria para Banho" : (isWarn ? "Atenção Sazonal" : "Imprópria para Banho");
+        const badgeColor = isGood ? "text-emerald-700 bg-emerald-50" : (isWarn ? "text-amber-700 bg-amber-50" : "text-rose-700 bg-rose-50");
+
+        const icon = L.divIcon({
+          className: '',
+          html: `<div class="poi-marker ${bgClass} w-7 h-7">${emoji}</div>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        });
+
+        L.marker([b.lat, b.lng], { icon })
+          .bindPopup(`<div class="p-3"><span class="text-[10px] font-bold uppercase ${badgeColor} px-2 py-0.5 rounded">${badgeText}</span><h4 class="font-bold text-sm text-slate-900 mt-1">${b.name}</h4><p class="text-xs text-slate-600 mt-1">${b.info}</p></div>`)
+          .addTo(layers.balneabilidade);
+      });
+
+      // C. Rotas Gastronômicas
+      const gastroRoutes = [
+        { name: "Via Gastronômica de Coqueiros & Itaguaçu", desc: "Maior concentração de restaurantes de frutos do mar, bistrôs e bares do Continente, com vista para a Baía Sul.", coords: [[-27.6035, -48.5745], [-27.6085, -48.5765], [-27.6145, -48.5815]] },
+        { name: "Rota Gastronômica do Sol Poente (Santo Antônio & Sambaqui)", desc: "Restaurantes açorianos especializados em ostras e sequência de camarão à beira da Baía Norte.", coords: [[-27.5125, -48.5185], [-27.5045, -48.5235], [-27.4925, -48.5345]] },
+        { name: "Rota Gastronômica do Ribeirão da Ilha", desc: "Freguesia histórica e maior polo de cultivo de ostras do país, com decks sobre o mar.", coords: [[-27.7145, -48.5635], [-27.7235, -48.5625], [-27.7325, -48.5615]] },
+        { name: "Corredor Gastronômico Santa Mônica / Itacorubi", desc: "Av. Madre Benvenuta e entorno: hamburguerias, cafés especiais, cervejarias artesanais e alta gastronomia.", coords: [[-27.5905, -48.5175], [-27.5885, -48.5105], [-27.5845, -48.5055]] },
+        { name: "Via Gastronômica de Ponta de Baixo (São José)", desc: "Tradição pesqueira e restaurantes frente-mar na orla histórica de São José.", coords: [[-27.6155, -48.6235], [-27.6205, -48.6205]] },
+        { name: "Polo Gastronômico da Lagoa & Avenida das Rendeiras", desc: "Culinária variada, bares e frutos do mar às margens da Lagoa da Conceição.", coords: [[-27.6045, -48.4665], [-27.6065, -48.4555], [-27.6045, -48.4455]] }
+      ];
+
+      gastroRoutes.forEach(route => {
+        L.polyline(route.coords, { color: '#f59e0b', weight: 5, dashArray: '8, 6', opacity: 0.9 })
+          .bindPopup(`<div class="p-3"><span class="text-[10px] font-bold uppercase text-amber-700 bg-amber-50 px-2 py-0.5 rounded">🍽️ Rota Gastronômica</span><h4 class="font-bold text-sm text-slate-900 mt-1">${route.name}</h4><p class="text-xs text-slate-600 mt-1">${route.desc}</p></div>`)
+          .addTo(layers.gastronomia);
+      });
+
+      // D. Zonas Urbanas
+      const urbanZones = [
+        { name: "Polo Universitário UFSC / UDESC", type: "Universitário & Tech", color: "#8b5cf6", lat: -27.5985, lng: -48.5185, radius: 1350, desc: "Trindade, Carvoeira, Pantanal, Córrego Grande e Itacorubi: alta demanda estudantil e de pesquisadores." },
+        { name: "Polo Tecnológico ACATE / SC-401", type: "Inovação & Tecnologia", color: "#06b6d4", lat: -27.5545, lng: -48.5035, radius: 1200, desc: "Saco Grande e Monte Verde: concentração de empresas de software, startups e centros corporativos." },
+        { name: "Eixo Comercial Central & Beira-Mar", type: "Comercial & Serviços", color: "#ec4899", lat: -27.5935, lng: -48.5515, radius: 1300, desc: "Centro e Agronômica: bancos, clínicas, órgãos públicos e comércio central." },
+        { name: "Centro Comercial Kobrasol / Campinas / Estreito", type: "Comercial Continental", color: "#f97316", lat: -27.5915, lng: -48.5965, radius: 1650, desc: "Maior concentração comercial e de serviços do Continente e São José." },
+        { name: "Eixo Residencial & Balneário Campeche / Rio Tavares", type: "Residencial & Praia", color: "#10b981", lat: -27.6680, lng: -48.4860, radius: 1900, desc: "Principal vetor de crescimento residencial moderno no Sul da Ilha." }
+      ];
+
+      urbanZones.forEach(z => {
+        L.circle([z.lat, z.lng], { color: z.color, fillColor: z.color, fillOpacity: 0.12, weight: 1.5, radius: z.radius })
+          .bindPopup(`<div class="p-3"><span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-700">${z.type}</span><h4 class="font-bold text-sm text-slate-900 mt-1">${z.name}</h4><p class="text-xs text-slate-600 mt-1">${z.desc}</p></div>`)
+          .addTo(layers.zonas);
+      });
+    }
+
+    buildThematicLayers();
+
+    // =========================================================================
+    // 4. ADDRESS SEARCH & CLICK-ON-MAP REVERSE GEOCODING
+    // =========================================================================
+    const localStreetsIndex = [
+      { label: "Rua Coronel Américo — Barreiros, São José/SC", lat: -27.5838, lng: -48.6132 },
+      { label: "Av. Leoberto Leal — Barreiros, São José/SC", lat: -27.5825, lng: -48.6115 },
+      { label: "Av. Presidente Kennedy — Campinas, São José/SC", lat: -27.5978, lng: -48.6122 },
+      { label: "Av. Central do Kobrasol — Kobrasol, São José/SC", lat: -27.5928, lng: -48.6128 },
+      { label: "Rua Fúlvio Aducci — Estreito, Florianópolis/SC", lat: -27.5868, lng: -48.5812 },
+      { label: "Av. Engenheiro Max de Souza — Coqueiros, Florianópolis/SC", lat: -27.6032, lng: -48.5768 },
+      { label: "Av. Jornalista Rubens de Arruda Ramos (Beira-Mar Norte) — Centro", lat: -27.5842, lng: -48.5515 },
+      { label: "Rua Bocaiúva — Centro, Florianópolis/SC", lat: -27.5882, lng: -48.5495 },
+      { label: "Av. Madre Benvenuta — Santa Mônica / Itacorubi, Florianópolis/SC", lat: -27.5892, lng: -48.5135 },
+      { label: "Rua Deputado Antônio Edu Vieira — Pantanal / Trindade, Florianópolis/SC", lat: -27.6042, lng: -48.5182 },
+      { label: "Av. Pequeno Príncipe — Campeche, Florianópolis/SC", lat: -27.6815, lng: -48.4855 },
+      { label: "Rodovia Francisco Magno Vieira (SC-405) — Rio Tavares, Florianópolis/SC", lat: -27.6485, lng: -48.4935 },
+      { label: "Av. das Rendeiras — Lagoa da Conceição, Florianópolis/SC", lat: -27.6055, lng: -48.4545 },
+      { label: "Av. dos Búzios — Jurerê Internacional, Florianópolis/SC", lat: -27.4388, lng: -48.4985 },
+      { label: "Estrada Intendente João Nunes Vieira — Ingleses, Florianópolis/SC", lat: -27.4375, lng: -48.4025 }
+    ];
+
+    function findNearestNeighborhood(lat, lng) {
+      let nearest = neighborhoodsData[0];
+      let minDist = Infinity;
+      neighborhoodsData.forEach(b => {
+        const d = Math.hypot(b.lat - lat, b.lng - lng);
+        if (d < minDist) {
+          minDist = d;
+          nearest = b;
+        }
+      });
+      return nearest;
+    }
+
+    function placeAddressMarker(lat, lng, title, subtitle) {
+      layers.addressPin.clearLayers();
+      const nearest = findNearestNeighborhood(lat, lng);
+      const rank = neighborhoodsData.findIndex(x => x.id === nearest.id) + 1;
+      const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+
+      const icon = L.divIcon({
+        className: '',
+        html: `<div class="address-pulse-pin"></div>`,
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+      });
+
+      const popupHTML = `
+        <div class="bg-white">
+          <div class="px-3.5 py-2.5 bg-violet-700 text-white">
+            <span class="text-[10px] font-bold uppercase tracking-wider opacity-90">📍 Endereço / Rua Localizada</span>
+            <h3 class="text-xs font-extrabold leading-snug mt-0.5">${title}</h3>
+            ${subtitle ? `<p class="text-[10px] text-violet-200 mt-0.5">${subtitle}</p>` : ''}
+          </div>
+          <div class="p-3 space-y-2 text-xs">
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-2">
+              <span class="text-[10px] text-slate-500 block">Bairro de Referência: <strong>${nearest.name} (${nearest.city})</strong></span>
+              <span class="text-[11px] font-bold text-slate-900">Média aluguel ≥45m²: ${formatBRL(nearest.rent)}/mês (#${rank})</span>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5">
+              <a href="${streetViewUrl}" target="_blank" rel="noopener noreferrer" class="bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-[11px] py-1.5 px-2 rounded-lg text-center transition">
+                👁️ Street View
+              </a>
+              <button onclick="prefillSaveFromAddress('${title.replace(/'/g, "\\'")}', '${nearest.name}')" class="bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-[11px] py-1.5 px-2 rounded-lg text-center transition cursor-pointer">
+                🔖 Salvar Nota
+              </button>
+            </div>
+            <button onclick="openAdSearchForNeighborhood('${nearest.name}', '${nearest.region}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] py-1.5 px-2 rounded-lg transition cursor-pointer">
+              🔍 Buscar Anúncios em ${nearest.name}
+            </button>
+          </div>
+        </div>
+      `;
+
+      const marker = L.marker([lat, lng], { icon })
+        .bindPopup(popupHTML, { maxWidth: 300 })
+        .addTo(layers.addressPin);
+
+      map.flyTo([lat, lng], 16, { duration: 1.0 });
+      setTimeout(() => marker.openPopup(), 400);
+    }
+
+    async function searchAddress() {
+      const rawInput = document.getElementById('address-search-input').value.trim();
+      if (!rawInput) return;
+
+      document.getElementById('address-suggestions').classList.add('hidden');
+      document.getElementById('clear-addr-btn').classList.remove('hidden');
+
+      // 1. Check local index first
+      const norm = rawInput.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const localMatch = localStreetsIndex.find(s =>
+        s.label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(norm)
+      );
+      if (localMatch) {
+        placeAddressMarker(localMatch.lat, localMatch.lng, localMatch.label, "Grande Florianópolis / SC");
+        return;
+      }
+
+      // 2. Check if it's a CEP (8 digits)
+      const cepDigits = rawInput.replace(/\D/g, '');
+      let queryToGeocode = `${rawInput}, Grande Florianópolis, SC, Brasil`;
+
+      if (cepDigits.length === 8) {
+        try {
+          const viaRes = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`);
+          const viaData = await viaRes.json();
+          if (!viaData.erro && viaData.logradouro) {
+            queryToGeocode = `${viaData.logradouro}, ${viaData.bairro}, ${viaData.localidade}, SC, Brasil`;
+          }
+        } catch (e) { /* fallback to normal geocode */ }
+      }
+
+      // 3. ArcGIS World Geocoding (free, accurate for Brazil streets)
+      try {
+        const arcUrl = `https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&singleLine=${encodeURIComponent(queryToGeocode)}&location=-48.55,-27.59&distance=35000&maxLocations=1`;
+        const res = await fetch(arcUrl);
+        const data = await res.json();
+        if (data.candidates && data.candidates.length > 0) {
+          const c = data.candidates[0];
+          placeAddressMarker(c.location.y, c.location.x, c.address, "Localizado via mapa de ruas");
+          return;
+        }
+      } catch (e) { /* fallback to Photon */ }
+
+      // 4. Fallback: Photon (Komoot)
+      try {
+        const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(rawInput + ' Florianopolis Sao Jose SC')}&lat=-27.59&lon=-48.55&limit=1`;
+        const pRes = await fetch(photonUrl);
+        const pData = await pRes.json();
+        if (pData.features && pData.features.length > 0) {
+          const feat = pData.features[0];
+          const [lng, lat] = feat.geometry.coordinates;
+          const props = feat.properties;
+          const label = [props.name || props.street, props.district || props.suburb, props.city].filter(Boolean).join(', ');
+          placeAddressMarker(lat, lng, label || rawInput, "Localizado no mapa");
+          return;
+        }
+      } catch (e) { /* ignore */ }
+
+      showToast("Rua não encontrada. Tente incluir o bairro (ex: Rua X, Barreiros).");
+    }
+
+    // Autocomplete on typing
+    document.getElementById('address-search-input').addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      const box = document.getElementById('address-suggestions');
+      const clearBtn = document.getElementById('clear-addr-btn');
+
+      if (!val) {
+        box.classList.add('hidden');
+        clearBtn.classList.add('hidden');
+        return;
+      }
+      clearBtn.classList.remove('hidden');
+
+      const norm = val.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const matches = localStreetsIndex.filter(s =>
+        s.label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(norm)
+      );
+
+      if (matches.length > 0) {
+        box.innerHTML = matches.map(m => `
+          <div onclick="selectSuggestedStreet(${m.lat}, ${m.lng}, '${m.label.replace(/'/g, "\\'")}')" class="px-3 py-2 hover:bg-violet-50 cursor-pointer flex items-center gap-2 text-slate-700">
+            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-violet-600 shrink-0"></i>
+            <span class="truncate font-medium">${m.label}</span>
+          </div>
+        `).join('');
+        box.classList.remove('hidden');
+        lucide.createIcons();
+      } else {
+        box.classList.add('hidden');
+      }
+    });
+
+    document.getElementById('address-search-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') searchAddress();
+    });
+
+    function selectSuggestedStreet(lat, lng, label) {
+      document.getElementById('address-search-input').value = label;
+      document.getElementById('address-suggestions').classList.add('hidden');
+      placeAddressMarker(lat, lng, label, "Grande Florianópolis / SC");
+    }
+
+    function clearAddressSearch() {
+      document.getElementById('address-search-input').value = '';
+      document.getElementById('address-suggestions').classList.add('hidden');
+      document.getElementById('clear-addr-btn').classList.add('hidden');
+      layers.addressPin.clearLayers();
+    }
+
+    // Click anywhere on the map to identify street name
+    map.on('click', async (e) => {
+      const { lat, lng } = e.latlng;
+      try {
+        const revUrl = `https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&location=${lng},${lat}`;
+        const res = await fetch(revUrl);
+        const data = await res.json();
+        if (data && data.address) {
+          const street = data.address.Address || data.address.ShortLabel || "Ponto no Mapa";
+          const sub = [data.address.Neighborhood, data.address.City].filter(Boolean).join(' • ');
+          placeAddressMarker(lat, lng, street, sub);
+        }
+      } catch (err) {
+        placeAddressMarker(lat, lng, `Coordenada (${lat.toFixed(4)}, ${lng.toFixed(4)})`, "Clique no mapa");
+      }
+    });
+
+    // =========================================================================
+    // 5. COLOR HELPERS, POPUPS & NEIGHBORHOOD LIST SYNC
+    // =========================================================================
+    const regionColors = {
+      "Leste": "#0d9488",
+      "Sul": "#0284c7",
+      "Norte": "#7c3aed",
+      "Centro": "#e11d48",
+      "Continente": "#d97706",
+      "São José": "#4f46e5"
+    };
+
+    function getPriceColor(rent) {
+      if (rent < 2400) return "#059669";
+      if (rent < 3000) return "#0284c7";
+      if (rent < 3800) return "#d97706";
+      return "#e11d48";
+    }
+
+    function formatBRL(value) {
+      return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+    }
+
+    function formatCompactBRL(value) {
+      return "R$" + (value / 1000).toFixed(1).replace('.', ',') + "k";
+    }
+
+    let markersMap = {};
+    let activeNeighborhoodId = null;
+    let currentRegion = "Todas";
+    let currentFilteredData = [...neighborhoodsData];
+
+    function createPopupHTML(b, rankIndex) {
+      const pricePerSqm = (b.rent / b.area).toFixed(2).replace('.', ',');
+      const regColor = regionColors[b.region] || "#334155";
+      const tagsHTML = b.tags.map(t => `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">${t}</span>`).join('');
+
+      return `
+        <div class="bg-white">
+          <div class="px-3.5 py-2.5 text-white flex items-center justify-between" style="background-color: ${regColor}">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider opacity-90">#${rankIndex} Mais Barato • ${b.region} (${b.city})</span>
+              <h3 class="text-sm font-extrabold leading-tight">${b.name}</h3>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-extrabold bg-white/20 px-2 py-1 rounded-lg">${formatBRL(b.rent)}/mês</span>
+            </div>
+          </div>
+          <div class="p-3.5 space-y-2.5 text-xs">
+            <div class="grid grid-cols-3 gap-1.5 bg-slate-50 p-2 rounded-xl border border-slate-100 text-center">
+              <div>
+                <span class="block text-[10px] text-slate-400 font-medium">Aluguel Médio</span>
+                <span class="font-bold text-slate-800">${formatBRL(b.rent)}</span>
+              </div>
+              <div class="border-x border-slate-200">
+                <span class="block text-[10px] text-slate-400 font-medium">Área Típica</span>
+                <span class="font-bold text-slate-800">${b.area} m²</span>
+              </div>
+              <div>
+                <span class="block text-[10px] text-slate-400 font-medium">Valor / m²</span>
+                <span class="font-bold text-slate-800">R$ ${pricePerSqm}</span>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-1">${tagsHTML}</div>
+            <p class="text-slate-600 leading-relaxed text-[11px]">${b.desc}</p>
+
+            <div class="pt-2 border-t border-slate-100 space-y-1 text-[11px]">
+              <div class="flex items-start gap-1.5">
+                <span class="font-bold text-sky-700 shrink-0">🌊 Orla:</span>
+                <span class="text-slate-600">${b.balneabilidade}</span>
+              </div>
+              <div class="flex items-start gap-1.5">
+                <span class="font-bold text-amber-700 shrink-0">🍽️ Gastro:</span>
+                <span class="text-slate-600">${b.gastronomia}</span>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 flex gap-1.5">
+              <button onclick="openAdSearchForNeighborhood('${b.name.replace(/'/g, "\\'")}', '${b.region}')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] py-2 px-2.5 rounded-xl transition cursor-pointer">
+                🔍 Buscar Anúncios
+              </button>
+              <button onclick="prefillSaveFromAddress('Bairro ${b.name}', '${b.name}')" class="bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-[11px] py-2 px-2.5 rounded-xl transition cursor-pointer" title="Anotar bairro">
+                🔖 Anotar
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateDashboard() {
+      const searchTerm = document.getElementById('search-input').value.trim().toLowerCase();
+      const profileVal = document.getElementById('profile-filter').value;
+      const maxPrice = parseInt(document.getElementById('price-slider').value, 10);
+      const colorMode = document.getElementById('color-mode').value;
+
+      updateLegend(colorMode);
+
+      currentFilteredData = neighborhoodsData.filter(item => {
+        const matchRegion = currentRegion === "Todas" || item.region === currentRegion;
+        const matchSearch = item.name.toLowerCase().includes(searchTerm) || item.city.toLowerCase().includes(searchTerm);
+        const matchProfile = profileVal === "Todos" || item.tags.includes(profileVal);
+        const matchPrice = item.rent <= maxPrice;
+        return matchRegion && matchSearch && matchProfile && matchPrice;
+      });
+
+      // Update KPIs
+      document.getElementById('kpi-count').textContent = currentFilteredData.length;
+      if (currentFilteredData.length > 0) {
+        const minRent = currentFilteredData[0].rent;
+        const maxRent = currentFilteredData[currentFilteredData.length - 1].rent;
+        const avgRent = Math.round(currentFilteredData.reduce((acc, cur) => acc + cur.rent, 0) / currentFilteredData.length);
+        document.getElementById('kpi-min').textContent = formatBRL(minRent);
+        document.getElementById('kpi-avg').textContent = formatBRL(avgRent);
+        document.getElementById('kpi-max').textContent = formatBRL(maxRent);
+      } else {
+        document.getElementById('kpi-min').textContent = "—";
+        document.getElementById('kpi-avg').textContent = "—";
+        document.getElementById('kpi-max').textContent = "—";
+      }
+
+      // Render Map Markers
+      layers.bairros.clearLayers();
+      markersMap = {};
+
+      currentFilteredData.forEach(b => {
+        const globalRank = neighborhoodsData.findIndex(x => x.id === b.id) + 1;
+        const bg = colorMode === "price" ? getPriceColor(b.rent) : (regionColors[b.region] || "#334155");
+        const isSelected = activeNeighborhoodId === b.id;
+
+        const icon = L.divIcon({
+          className: '',
+          html: `<div id="marker-el-${b.id}" class="price-marker ${isSelected ? 'active-marker' : ''}" style="background-color: ${bg};">${formatCompactBRL(b.rent)}</div>`,
+          iconSize: [56, 24],
+          iconAnchor: [28, 12]
+        });
+
+        const marker = L.marker([b.lat, b.lng], { icon })
+          .bindPopup(createPopupHTML(b, globalRank), { maxWidth: 310 })
+          .on('click', () => highlightItem(b.id, false));
+
+        marker.addTo(layers.bairros);
+        markersMap[b.id] = marker;
+      });
+
+      // Render Sidebar List
+      const listContainer = document.getElementById('neighborhood-list');
+      if (currentFilteredData.length === 0) {
+        listContainer.innerHTML = `
+          <div class="p-8 text-center text-slate-400 space-y-2">
+            <i data-lucide="search-x" class="w-8 h-8 mx-auto text-slate-300"></i>
+            <p class="text-xs font-medium text-slate-600">Nenhum bairro encontrado com esses filtros.</p>
+            <button onclick="resetFilters()" class="text-xs font-semibold text-sky-600 hover:underline cursor-pointer">Limpar filtros</button>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      listContainer.innerHTML = currentFilteredData.map(b => {
+        const globalRank = neighborhoodsData.findIndex(x => x.id === b.id) + 1;
+        const badgeColor = colorMode === "price" ? getPriceColor(b.rent) : (regionColors[b.region] || "#334155");
+        const isSelected = activeNeighborhoodId === b.id;
+
+        return `
+          <div id="list-item-${b.id}" onclick="selectNeighborhood(${b.id})" class="px-4 py-3 hover:bg-sky-50/70 transition cursor-pointer flex items-center justify-between gap-2.5 ${isSelected ? 'bg-sky-50 border-l-4 border-sky-600' : ''}">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[11px] font-bold text-slate-400 w-6 shrink-0">#${globalRank}</span>
+                <h3 class="text-xs sm:text-sm font-bold text-slate-900 truncate">${b.name}</h3>
+              </div>
+              <div class="flex items-center gap-1.5 mt-1 pl-7 flex-wrap">
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-md text-white" style="background-color: ${regionColors[b.region]}">${b.region}</span>
+                <span class="text-[10px] text-slate-500">• ${b.area}m² (R$ ${(b.rent / b.area).toFixed(0)}/m²)</span>
+              </div>
+              <div class="pl-7 mt-1.5 flex items-center gap-2">
+                <button onclick="event.stopPropagation(); openAdSearchForNeighborhood('${b.name.replace(/'/g, "\\'")}', '${b.region}')" class="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-md transition cursor-pointer">
+                  Ver anúncios ↗
+                </button>
+                <button onclick="event.stopPropagation(); prefillSaveFromAddress('Bairro ${b.name}', '${b.name}')" class="text-[10px] font-semibold text-slate-500 hover:text-amber-700 cursor-pointer">
+                  + Anotar
+                </button>
+              </div>
+            </div>
+            <div class="text-right shrink-0">
+              <span class="inline-block text-xs sm:text-sm font-extrabold px-2.5 py-1 rounded-xl text-white shadow-xs" style="background-color: ${badgeColor}">
+                ${formatBRL(b.rent)}
+              </span>
+              <span class="block text-[10px] text-slate-400 mt-0.5">/mês + vaga</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateLegend(colorMode) {
+      const titleEl = document.getElementById('legend-title');
+      const contentEl = document.getElementById('legend-content');
+      if (colorMode === "price") {
+        titleEl.textContent = "Legenda — Faixa de Aluguel";
+        contentEl.innerHTML = `
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-600 inline-block"></span> Econômico: Até R$ 2.399/mês</div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-sky-600 inline-block"></span> Intermediário: R$ 2.400 a R$ 2.999</div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-600 inline-block"></span> Valorizado: R$ 3.000 a R$ 3.799</div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-rose-600 inline-block"></span> Alto Padrão: Acima de R$ 3.800</div>
+        `;
+      } else {
+        titleEl.textContent = "Legenda — Regiões";
+        contentEl.innerHTML = `
+          <div class="grid grid-cols-2 gap-1">
+            <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full inline-block" style="background:#0d9488"></span> Leste</div>
+            <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full inline-block" style="background:#0284c7"></span> Sul</div>
+            <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full inline-block" style="background:#7c3aed"></span> Norte</div>
+            <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full inline-block" style="background:#e11d48"></span> Centro</div>
+            <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full inline-block" style="background:#d97706"></span> Continente</div>
+            <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full inline-block" style="background:#4f46e5"></span> São José</div>
+          </div>
+        `;
+      }
+    }
+
+    function selectNeighborhood(id) {
+      const b = neighborhoodsData.find(x => x.id === id);
+      if (!b) return;
+      highlightItem(id, true);
+
+      if (window.innerWidth < 1024) {
+        document.getElementById('sidebar').classList.add('-translate-x-full');
+      }
+
+      map.flyTo([b.lat, b.lng], 14, { duration: 1.0 });
+      setTimeout(() => {
+        if (markersMap[id]) markersMap[id].openPopup();
+      }, 420);
+    }
+
+    function highlightItem(id, scrollList) {
+      activeNeighborhoodId = id;
+      document.querySelectorAll('.price-marker').forEach(el => el.classList.remove('active-marker'));
+      const markerEl = document.getElementById(`marker-el-${id}`);
+      if (markerEl) markerEl.classList.add('active-marker');
+
+      document.querySelectorAll('#neighborhood-list > div').forEach(el => {
+        el.classList.remove('bg-sky-50', 'border-l-4', 'border-sky-600');
+      });
+      const listEl = document.getElementById(`list-item-${id}`);
+      if (listEl) {
+        listEl.classList.add('bg-sky-50', 'border-l-4', 'border-sky-600');
+        if (scrollList) listEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    // =========================================================================
+    // 6. TAB 2: UNIFIED AGGREGATOR SEARCH BUILDER (ALL AGENCIES TOGETHER)
+    // =========================================================================
+    function slugify(str) {
+      return str
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+    }
+
+    function populateAdNeighborhoodDropdown() {
+      const reg = document.getElementById('ad-region-select').value;
+      const select = document.getElementById('ad-neighborhood-select');
+      const filtered = neighborhoodsData
+        .filter(b => reg === "Todas" || b.region === reg)
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      select.innerHTML = `<option value="">Todos os bairros (${filtered.length})</option>` +
+        filtered.map(b => `<option value="${b.name}" data-city="${b.city}">${b.name} (${b.city} • ~${formatBRL(b.rent)})</option>`).join('');
+    }
+
+    function onAdRegionChange() {
+      populateAdNeighborhoodDropdown();
+      updateAggregatorLinks();
+    }
+
+    function getCurrentAggregatorUrls() {
+      const reg = document.getElementById('ad-region-select').value;
+      const neighSelect = document.getElementById('ad-neighborhood-select');
+      const neighName = neighSelect.value;
+      const selectedOpt = neighSelect.options[neighSelect.selectedIndex];
+      const cityFromOpt = selectedOpt ? selectedOpt.getAttribute('data-city') : null;
+
+      const isSaoJose = cityFromOpt === "São José" || (!cityFromOpt && reg === "São José");
+      const cityName = isSaoJose ? "São José" : "Florianópolis";
+      const citySlug = isSaoJose ? "sao-jose" : "florianopolis";
+      const neighSlug = neighName ? slugify(neighName) : "";
+
+      const typeVal = document.getElementById('ad-type-select').value;
+      const rooms = document.getElementById('ad-rooms-select').value;
+      const area = document.getElementById('ad-area-select').value;
+      const maxPrice = document.getElementById('ad-max-price-select').value;
+      const parking = document.getElementById('ad-parking-check').checked;
+      const furnished = document.getElementById('ad-furnished-check').checked;
+
+      // Update badge label
+      document.getElementById('ad-target-label').textContent = neighName ? `${neighName} (${cityName})` : cityName;
+
+      // Build smart URLs for major aggregators
+      const imovelwebType = typeVal === "casa" ? "casas" : (typeVal === "kitnet" ? "kitnets" : (typeVal === "apartamento" ? "apartamentos" : "imoveis"));
+      const imovelwebLoc = neighSlug ? `${neighSlug}-${citySlug}-sc` : `${citySlug}-sc`;
+      const imovelwebUrl = `https://www.imovelweb.com.br/${imovelwebType}-aluguel-${imovelwebLoc}-${rooms}-quartos-mais-de-${area}-m2-ate-${maxPrice}-reais.html`;
+
+      const zapType = typeVal === "casa" ? "casas" : (typeVal === "kitnet" ? "kitnets" : (typeVal === "apartamento" ? "apartamentos" : "imoveis"));
+      const zapLoc = neighSlug ? `sc+${citySlug}++${neighSlug}` : `sc+${citySlug}`;
+      const zapUrl = `https://www.zapimoveis.com.br/aluguel/${zapType}/${zapLoc}/?onde=,Santa%20Catarina,${encodeURIComponent(cityName)},,${encodeURIComponent(neighName)},,,BR%3ESanta%20Catarina%3ENULL%3E${encodeURIComponent(cityName)}&quartos=${rooms}&precoMaximo=${maxPrice}&areaMinima=${area}${parking ? '&vagas=1' : ''}`;
+
+      const chavesType = typeVal === "casa" ? "casas" : (typeVal === "kitnet" ? "kitnets" : (typeVal === "apartamento" ? "apartamentos" : "imoveis"));
+      const chavesLoc = neighSlug ? `sc-${citySlug}-${neighSlug}` : `sc-${citySlug}`;
+      const chavesUrl = `https://www.chavesnamao.com.br/${chavesType}-para-alugar/${chavesLoc}/?quartos=${rooms}&preco_ate=${maxPrice}&area_de=${area}${parking ? '&vagas=1' : ''}`;
+
+      const vivaUrl = `https://www.vivareal.com.br/aluguel/santa-catarina/${citySlug}/${neighSlug ? 'bairros/' + neighSlug + '/' : ''}?quartos=${rooms}&precoMaximo=${maxPrice}&areaMinima=${area}${parking ? '&vagas=1' : ''}`;
+
+      const olxQuery = encodeURIComponent(`${typeVal !== 'todos' ? typeVal : 'aluguel'} ${neighName} ${cityName} ${parking ? 'garagem' : ''}`.trim());
+      const olxUrl = `https://www.olx.com.br/imoveis/aluguel/estado-sc/florianopolis-e-regiao?q=${olxQuery}&pe=${maxPrice}`;
+
+      const quintoSlug = neighSlug ? `${neighSlug}-${citySlug}-sc-brasil` : `${citySlug}-sc-brasil`;
+      const quintoUrl = `https://www.quintoandar.com.br/alugar/imovel/${quintoSlug}/de-500-a-${maxPrice}-reais/${rooms}-quartos${parking ? '/1-vaga' : ''}${furnished ? '/mobiliado' : ''}`;
+
+      return [
+        { name: "Imovelweb", desc: "Reúne centenas de imobiliárias de SC", url: imovelwebUrl, badge: "Agregador #1", color: "border-orange-200 hover:border-orange-400" },
+        { name: "ZAP Imóveis", desc: "Maior volume de anúncios de imobiliárias", url: zapUrl, badge: "Agregador #2", color: "border-sky-200 hover:border-sky-400" },
+        { name: "Chaves na Mão", desc: "Muito forte em Floripa e São José", url: chavesUrl, badge: "Regional SC", color: "border-rose-200 hover:border-rose-400" },
+        { name: "VivaReal", desc: "Catálogo unificado de corretores e agências", url: vivaUrl, badge: "Portal", color: "border-teal-200 hover:border-teal-400" },
+        { name: "QuintoAndar", desc: "Aluguel digital sem fiador", url: quintoUrl, badge: "Digital", color: "border-indigo-200 hover:border-indigo-400" },
+        { name: "OLX Imóveis", desc: "Direto com proprietário e imobiliárias", url: olxUrl, badge: "Direto + Agências", color: "border-purple-200 hover:border-purple-400" }
+      ];
+    }
+
+    function updateAggregatorLinks() {
+      const portals = getCurrentAggregatorUrls();
+      const container = document.getElementById('aggregators-list');
+      container.innerHTML = portals.map(p => `
+        <a href="${p.url}" target="_blank" rel="noopener noreferrer" class="bg-white border ${p.color} rounded-xl p-3 flex flex-col justify-between shadow-2xs hover:shadow-md transition group">
+          <div class="flex items-center justify-between gap-1">
+            <span class="font-extrabold text-xs text-slate-900 group-hover:text-sky-700">${p.name}</span>
+            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${p.badge}</span>
+          </div>
+          <p class="text-[10px] text-slate-500 mt-1">${p.desc}</p>
+          <div class="mt-2 text-[11px] font-bold text-sky-600 flex items-center gap-1">
+            <span>Ver imóveis filtrados</span>
+            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+          </div>
+        </a>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function openTop3Aggregators() {
+      const portals = getCurrentAggregatorUrls();
+      portals.slice(0, 3).forEach(p => window.open(p.url, '_blank', 'noopener,noreferrer'));
+    }
+
+    function openAdSearchForNeighborhood(neighName, region) {
+      switchSidebarTab('anuncios');
+      if (window.innerWidth < 1024) {
+        document.getElementById('sidebar').classList.remove('-translate-x-full');
+      }
+      document.getElementById('ad-region-select').value = region || "Todas";
+      populateAdNeighborhoodDropdown();
+      document.getElementById('ad-neighborhood-select').value = neighName;
+      updateAggregatorLinks();
+    }
+
+    function resetAdSearchFilters() {
+      document.getElementById('ad-region-select').value = "Todas";
+      populateAdNeighborhoodDropdown();
+      document.getElementById('ad-type-select').value = "todos";
+      document.getElementById('ad-rooms-select').value = "2";
+      document.getElementById('ad-area-select').value = "45";
+      document.getElementById('ad-max-price-select').value = "3000";
+      document.getElementById('ad-parking-check').checked = true;
+      document.getElementById('ad-furnished-check').checked = false;
+      updateAggregatorLinks();
+    }
+
+    // =========================================================================
+    // 7. TAB 3: SAVED ITEMS & PERSISTENT NOTES (LOCALSTORAGE)
+    // =========================================================================
+    const STORAGE_KEY = "floripa_sj_saved_notes_v1";
+    let savedItems = [];
+
+    function loadSavedItems() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        savedItems = raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        savedItems = [];
+      }
+      renderSavedItems();
+    }
+
+    function persistSavedItems() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(savedItems));
+      } catch (e) { /* ignore quota */ }
+      renderSavedItems();
+    }
+
+    function prefillSaveFromAddress(title, neighborhood) {
+      switchSidebarTab('salvos');
+      if (window.innerWidth < 1024) {
+        document.getElementById('sidebar').classList.remove('-translate-x-full');
+      }
+      document.getElementById('save-title-input').value = title;
+      document.getElementById('save-neighborhood-input').value = neighborhood || '';
+      document.getElementById('save-note-input').focus();
+    }
+
+    function saveCustomItem() {
+      const title = document.getElementById('save-title-input').value.trim();
+      const neighborhood = document.getElementById('save-neighborhood-input').value.trim();
+      const price = document.getElementById('save-price-input').value.trim();
+      const link = document.getElementById('save-link-input').value.trim();
+      const note = document.getElementById('save-note-input').value.trim();
+
+      if (!title) {
+        showToast("Informe ao menos a rua ou título do imóvel.");
+        return;
+      }
+
+      savedItems.unshift({
+        id: Date.now(),
+        title,
+        neighborhood: neighborhood || "Grande Floripa",
+        price: price || "A consultar",
+        link,
+        note,
+        status: "Favorito",
+        createdAt: new Date().toLocaleDateString('pt-BR')
+      });
+
+      document.getElementById('save-title-input').value = "";
+      document.getElementById('save-neighborhood-input').value = "";
+      document.getElementById('save-price-input').value = "";
+      document.getElementById('save-link-input').value = "";
+      document.getElementById('save-note-input').value = "";
+
+      persistSavedItems();
+      showToast("Salvo na sua lista de anotações!");
+    }
+
+    function updateSavedStatus(id, newStatus) {
+      const item = savedItems.find(x => x.id === id);
+      if (item) {
+        item.status = newStatus;
+        persistSavedItems();
+      }
+    }
+
+    function deleteSavedItem(id) {
+      savedItems = savedItems.filter(x => x.id !== id);
+      persistSavedItems();
+      showToast("Item removido.");
+    }
+
+    function renderSavedItems() {
+      document.getElementById('saved-count-badge').textContent = savedItems.length;
+      const container = document.getElementById('saved-items-list');
+
+      if (savedItems.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white border border-dashed border-slate-300 rounded-2xl p-6 text-center text-slate-400 space-y-1">
+            <i data-lucide="bookmark" class="w-7 h-7 mx-auto text-slate-300"></i>
+            <p class="text-xs font-semibold text-slate-600">Nenhum imóvel ou rua salva ainda</p>
+            <p class="text-[11px]">Clique em qualquer rua no mapa ou preencha o formulário acima para guardar links e anotações.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = savedItems.map(item => `
+        <div class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-sky-50 text-sky-700">${item.neighborhood}</span>
+              <h4 class="text-xs font-extrabold text-slate-900 mt-1">${item.title}</h4>
+            </div>
+            <button onclick="deleteSavedItem(${item.id})" class="text-slate-400 hover:text-rose-600 p-1 cursor-pointer" title="Excluir">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-emerald-700">${item.price}</span>
+            <select onchange="updateSavedStatus(${item.id}, this.value)" class="text-[11px] font-semibold bg-slate-100 border border-slate-200 rounded-lg px-2 py-1 text-slate-700">
+              <option value="Favorito" ${item.status === 'Favorito' ? 'selected' : ''}>⭐ Favorito</option>
+              <option value="Visitar" ${item.status === 'Visitar' ? 'selected' : ''}>📅 Agendar Visita</option>
+              <option value="Em Negociação" ${item.status === 'Em Negociação' ? 'selected' : ''}>🤝 Em Negociação</option>
+              <option value="Descartado" ${item.status === 'Descartado' ? 'selected' : ''}>❌ Descartado</option>
+            </select>
+          </div>
+
+          ${item.note ? `<p class="text-[11px] text-slate-600 bg-amber-50/70 border border-amber-100 rounded-xl p-2">${item.note}</p>` : ''}
+
+          <div class="flex items-center justify-between pt-1 text-[11px]">
+            <span class="text-[10px] text-slate-400">Salvo em ${item.createdAt}</span>
+            ${item.link ? `<a href="${item.link}" target="_blank" rel="noopener noreferrer" class="font-bold text-sky-600 hover:underline flex items-center gap-1">Abrir Anúncio <i data-lucide="external-link" class="w-3 h-3"></i></a>` : ''}
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    // =========================================================================
+    // 8. SIDEBAR TABS, DRAGGABLE FLOATING WIDGETS & UI CONTROLS
+    // =========================================================================
+    function switchSidebarTab(tabName) {
+      ['bairros', 'anuncios', 'salvos'].forEach(t => {
+        const panel = document.getElementById(`tab-panel-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (t === tabName) {
+          panel.classList.remove('hidden');
+          btn.classList.add('bg-white', 'text-slate-900', 'shadow-sm', 'font-bold');
+          btn.classList.remove('text-slate-600', 'font-semibold');
+        } else {
+          panel.classList.add('hidden');
+          btn.classList.remove('bg-white', 'text-slate-900', 'shadow-sm', 'font-bold');
+          btn.classList.add('text-slate-600', 'font-semibold');
+        }
+      });
+    }
+
+    function makeElementDraggable(widgetId, handleId) {
+      const widget = document.getElementById(widgetId);
+      const handle = document.getElementById(handleId);
+      if (!widget || !handle) return;
+
+      let isDragging = false;
+      let startX = 0, startY = 0, initialLeft = 0, initialTop = 0;
+
+      handle.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('button')) return;
+        isDragging = true;
+        const rect = widget.getBoundingClientRect();
+        widget.style.left = rect.left + 'px';
+        widget.style.top = rect.top + 'px';
+        widget.style.right = 'auto';
+        widget.style.bottom = 'auto';
+
+        startX = e.clientX;
+        startY = e.clientY;
+        initialLeft = rect.left;
+        initialTop = rect.top;
+        handle.setPointerCapture(e.pointerId);
+      });
+
+      handle.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        const maxLeft = window.innerWidth - widget.offsetWidth - 8;
+        const maxTop = window.innerHeight - widget.offsetHeight - 8;
+        const newLeft = Math.max(8, Math.min(maxLeft, initialLeft + dx));
+        const newTop = Math.max(8, Math.min(maxTop, initialTop + dy));
+        widget.style.left = newLeft + 'px';
+        widget.style.top = newTop + 'px';
+      });
+
+      handle.addEventListener('pointerup', (e) => {
+        if (isDragging) {
+          isDragging = false;
+          handle.releasePointerCapture(e.pointerId);
+        }
+      });
+    }
+
+    makeElementDraggable('layers-widget', 'layers-drag-handle');
+    makeElementDraggable('legend-widget', 'legend-drag-handle');
+
+    function toggleLayersMinimize() {
+      const body = document.getElementById('layers-body');
+      body.classList.toggle('hidden');
+    }
+
+    function toggleLayersWidgetVisibility(show) {
+      const widget = document.getElementById('layers-widget');
+      const btn = document.getElementById('show-layers-btn');
+      if (show) {
+        widget.classList.remove('hidden');
+        btn.classList.add('hidden');
+      } else {
+        widget.classList.add('hidden');
+        btn.classList.remove('hidden');
+      }
+    }
+
+    function toggleLegendVisibility(show) {
+      const widget = document.getElementById('legend-widget');
+      const btn = document.getElementById('show-legend-btn');
+      if (show) {
+        widget.classList.remove('hidden');
+        btn.classList.add('hidden');
+      } else {
+        widget.classList.add('hidden');
+        btn.classList.remove('hidden');
+      }
+    }
+
+    // Region filter buttons
+    document.querySelectorAll('.region-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.region-btn').forEach(b => {
+          b.classList.remove('bg-slate-900', 'text-white', 'font-semibold');
+          b.classList.add('bg-white', 'border', 'border-slate-200', 'text-slate-700', 'font-medium');
+        });
+        btn.classList.remove('bg-white', 'border', 'border-slate-200', 'text-slate-700', 'font-medium');
+        btn.classList.add('bg-slate-900', 'text-white', 'font-semibold');
+
+        currentRegion = btn.getAttribute('data-region');
+        updateDashboard();
+
+        if (currentRegion !== "Todas") {
+          flyRegion(currentRegion === "Continente" || currentRegion === "São José" ? "ContinenteSJ" : currentRegion);
+        } else {
+          flyRegion("Geral");
+        }
+      });
+    });
+
+    document.getElementById('search-input').addEventListener('input', updateDashboard);
+    document.getElementById('profile-filter').addEventListener('change', updateDashboard);
+    document.getElementById('color-mode').addEventListener('change', updateDashboard);
+
+    document.getElementById('price-slider').addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      document.getElementById('price-slider-val').textContent = val >= 6000 ? "Até R$ 6.000" : `Até ${formatBRL(val)}`;
+      updateDashboard();
+    });
+
+    // Layer Checkboxes
+    [
+      { id: 'layer-bairros', layer: layers.bairros },
+      { id: 'layer-beiramar', layer: layers.beiramar },
+      { id: 'layer-balneabilidade', layer: layers.balneabilidade },
+      { id: 'layer-gastronomia', layer: layers.gastronomia },
+      { id: 'layer-zonas', layer: layers.zonas }
+    ].forEach(item => {
+      document.getElementById(item.id).addEventListener('change', (e) => {
+        if (e.target.checked) map.addLayer(item.layer);
+        else map.removeLayer(item.layer);
+      });
+    });
+
+    function resetFilters() {
+      currentRegion = "Todas";
+      document.querySelectorAll('.region-btn').forEach(b => {
+        b.classList.remove('bg-slate-900', 'text-white', 'font-semibold');
+        b.classList.add('bg-white', 'border', 'border-slate-200', 'text-slate-700', 'font-medium');
+      });
+      const allBtn = document.querySelector('.region-btn[data-region="Todas"]');
+      allBtn.classList.remove('bg-white', 'border', 'border-slate-200', 'text-slate-700', 'font-medium');
+      allBtn.classList.add('bg-slate-900', 'text-white', 'font-semibold');
+
+      document.getElementById('search-input').value = "";
+      document.getElementById('profile-filter').value = "Todos";
+      document.getElementById('price-slider').value = 6000;
+      document.getElementById('price-slider-val').textContent = "Até R$ 6.000";
+      activeNeighborhoodId = null;
+
+      updateDashboard();
+      flyRegion("Geral");
+    }
+
+    function flyRegion(regionKey) {
+      const views = {
+        Geral: { center: [-27.595, -48.555], zoom: 11 },
+        Norte: { center: [-27.445, -48.455], zoom: 13 },
+        Leste: { center: [-27.575, -48.445], zoom: 13 },
+        Sul: { center: [-27.710, -48.510], zoom: 12 },
+        Centro: { center: [-27.590, -48.530], zoom: 13 },
+        ContinenteSJ: { center: [-27.595, -48.610], zoom: 13 }
+      };
+      const target = views[regionKey] || views.Geral;
+      map.flyTo(target.center, target.zoom, { duration: 1.0 });
+    }
+
+    function toggleMobileSidebar() {
+      document.getElementById('sidebar').classList.toggle('-translate-x-full');
+    }
+
+    function exportCSV() {
+      const headers = ["Ranking Geral", "Bairro", "Cidade", "Regiao", "Aluguel Medio Mensal (R$)", "Area Tipica (m2)", "Valor por m2 (R$)", "Perfil Urbano", "Balneabilidade / Orla", "Gastronomia"];
+      const rows = currentFilteredData.map(b => {
+        const rank = neighborhoodsData.findIndex(x => x.id === b.id) + 1;
+        const sqm = (b.rent / b.area).toFixed(2).replace('.', ',');
+        return [
+          rank,
+          `"${b.name}"`,
+          `"${b.city}"`,
+          `"${b.region}"`,
+          b.rent,
+          b.area,
+          `"${sqm}"`,
+          `"${b.tags.join(', ')}"`,
+          `"${b.balneabilidade}"`,
+          `"${b.gastronomia}"`
+        ].join(';');
+      });
+
+      const csvContent = "\uFEFF" + [headers.join(';'), ...rows].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Alugueis_Floripa_SaoJose_${currentRegion}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast(`Exportados ${currentFilteredData.length} bairros para CSV!`);
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      toast.classList.remove('opacity-0');
+      setTimeout(() => toast.classList.add('opacity-0'), 3000);
+    }
+
+    // Boot
+    lucide.createIcons();
+    populateAdNeighborhoodDropdown();
+    updateAggregatorLinks();
+    loadSavedItems();
+    updateDashboard();
+  </script>
+</body>
+</html>
