@@ -1,0 +1,375 @@
+let courses = [];
+    let editingCertFile = null;
+    const revealedPasswords = new Set();
+
+    function safeGet(key, fallback) {
+      try {
+        const v = localStorage.getItem(key);
+        return v !== null ? v : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function safeSet(key, val) {
+      try {
+        localStorage.setItem(key, val);
+      } catch (e) {}
+    }
+
+    function isCloudConfigured() {
+      return Boolean(CLOUD_API_URL) && !CLOUD_API_URL.includes("COLE_AQUI");
+    }
+
+    async function cloudGet() {
+      if (!isCloudConfigured()) return null;
+      const res = await fetch(`${CLOUD_API_URL}?token=${encodeURIComponent(CLOUD_TOKEN)}`);
+      return await res.json();
+    }
+
+    async function cloudPost(payload) {
+      if (!isCloudConfigured()) return null;
+      try {
+        await fetch(CLOUD_API_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ ...payload, token: CLOUD_TOKEN })
+        });
+      } catch (e) {}
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.classList.remove("opacity-0");
+      setTimeout(() => toast.classList.add("opacity-0"), 2800);
+    }
+
+    function copyText(text, label = "Copiado!") {
+      if (!text) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast(label)).catch(() => fallbackCopy(text, label));
+      } else {
+        fallbackCopy(text, label);
+      }
+    }
+
+    function fallbackCopy(text, label) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      showToast(label);
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    async function init() {
+      try {
+        courses = JSON.parse(safeGet(STORAGE_KEY, "[]"));
+        if (!Array.isArray(courses)) courses = [];
+      } catch (e) {
+        courses = [];
+      }
+
+      renderCourses();
+
+      if (isCloudConfigured()) {
+        document.getElementById("syncStatus").textContent = "☁️ Sincronizando...";
+        try {
+          const data = await cloudGet();
+          if (data && data.ok && data.config && data.config.coursesList) {
+            const cloudCourses = JSON.parse(data.config.coursesList);
+            if (Array.isArray(cloudCourses) && cloudCourses.length > 0) {
+              courses = cloudCourses;
+              safeSet(STORAGE_KEY, JSON.stringify(courses));
+              renderCourses();
+            }
+          }
+          document.getElementById("syncStatus").textContent = "☁️ Sincronizado";
+        } catch (e) {
+          document.getElementById("syncStatus").textContent = "💾 Local";
+        }
+      } else {
+        document.getElementById("syncStatus").textContent = "💾 Local";
+      }
+    }
+
+    function persistCourses() {
+      safeSet(STORAGE_KEY, JSON.stringify(courses));
+      cloudPost({
+        action: "saveConfig",
+        key: "coursesList",
+        value: JSON.stringify(courses)
+      });
+    }
+
+    function onStatusChange() {
+      const status = document.getElementById("courseStatus").value;
+      const progressInput = document.getElementById("courseProgress");
+      if (status === "Concluído" && Number(progressInput.value) < 100) {
+        progressInput.value = 100;
+      } else if (status === "Pendente" && Number(progressInput.value) > 0) {
+        progressInput.value = 0;
+      }
+      onProgressChange();
+    }
+
+    function onProgressChange() {
+      const val = Number(document.getElementById("courseProgress").value);
+      document.getElementById("progressValueLabel").textContent = val;
+      const statusSelect = document.getElementById("courseStatus");
+      if (val === 100) {
+        statusSelect.value = "Concluído";
+      } else if (val > 0 && statusSelect.value === "Pendente") {
+        statusSelect.value = "Em andamento";
+      }
+    }
+
+    function handleCertFileSelect(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      if (file.size > 2.5 * 1024 * 1024) {
+        showToast("Escolha um arquivo de até 2,5 MB para manter leve no navegador.");
+        e.target.value = "";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = ev => {
+        editingCertFile = {
+          name: file.name,
+          type: file.type,
+          dataUrl: ev.target.result
+        };
+        renderCertPreview();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function renderCertPreview() {
+      const box = document.getElementById("certFilePreview");
+      const label = document.getElementById("certFileNameLabel");
+      if (editingCertFile && editingCertFile.name) {
+        label.textContent = editingCertFile.name;
+        box.classList.remove("hidden");
+        box.classList.add("flex");
+      } else {
+        label.textContent = "";
+        box.classList.add("hidden");
+        box.classList.remove("flex");
+      }
+    }
+
+    function clearCertFile() {
+      editingCertFile = null;
+      document.getElementById("courseCertFile").value = "";
+      renderCertPreview();
+    }
+
+    function openCourseModal(id = null) {
+      document.getElementById("courseForm").reset();
+      editingCertFile = null;
+      renderCertPreview();
+
+      if (id) {
+        const item = courses.find(c => c.id === id);
+        if (!item) return;
+        document.getElementById("modalTitle").textContent = "✏️ Editar Curso ou Certificação";
+        document.getElementById("courseId").value = item.id;
+        document.getElementById("courseName").value = item.name || "";
+        document.getElementById("coursePlatform").value = item.platform || "";
+        document.getElementById("courseStatus").value = item.status || "Pendente";
+        document.getElementById("courseProgress").value = item.progress ?? 0;
+        document.getElementById("courseHours").value = item.hours || "";
+        document.getElementById("courseUrl").value = item.url || "";
+        document.getElementById("courseTargetDate").value = item.targetDate || "";
+        document.getElementById("courseLogin").value = item.login || "";
+        document.getElementById("coursePassword").value = item.password || "";
+        document.getElementById("courseCertUrl").value = item.certUrl || "";
+        document.getElementById("courseNotes").value = item.notes || "";
+        if (item.certFile) {
+          editingCertFile = { ...item.certFile };
+          renderCertPreview();
+        }
+      } else {
+        document.getElementById("modalTitle").textContent = "➕ Adicionar Curso ou Certificação";
+        document.getElementById("courseId").value = "";
+        document.getElementById("courseProgress").value = 0;
+      }
+
+      onProgressChange();
+      const modal = document.getElementById("courseModal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeCourseModal() {
+      const modal = document.getElementById("courseModal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    function saveCourse(e) {
+      e.preventDefault();
+      const idVal = document.getElementById("courseId").value;
+      const entry = {
+        id: idVal || ("crs-" + Date.now()),
+        name: document.getElementById("courseName").value.trim(),
+        platform: document.getElementById("coursePlatform").value.trim(),
+        status: document.getElementById("courseStatus").value,
+        progress: Number(document.getElementById("courseProgress").value) || 0,
+        hours: document.getElementById("courseHours").value.trim(),
+        url: document.getElementById("courseUrl").value.trim(),
+        targetDate: document.getElementById("courseTargetDate").value,
+        login: document.getElementById("courseLogin").value.trim(),
+        password: document.getElementById("coursePassword").value,
+        certUrl: document.getElementById("courseCertUrl").value.trim(),
+        certFile: editingCertFile ? { ...editingCertFile } : null,
+        notes: document.getElementById("courseNotes").value.trim(),
+        updatedAt: new Date().toLocaleDateString("pt-BR")
+      };
+
+      if (idVal) {
+        const idx = courses.findIndex(c => c.id === idVal);
+        if (idx >= 0) courses[idx] = entry;
+      } else {
+        courses.unshift(entry);
+      }
+
+      persistCourses();
+      renderCourses();
+      closeCourseModal();
+      showToast("Curso salvo com sucesso!");
+    }
+
+    function deleteCourse(id) {
+      courses = courses.filter(c => c.id !== id);
+      persistCourses();
+      renderCourses();
+      showToast("Item removido.");
+    }
+
+    function togglePasswordVisibility(id) {
+      if (revealedPasswords.has(id)) {
+        revealedPasswords.delete(id);
+      } else {
+        revealedPasswords.add(id);
+      }
+      renderCourses();
+    }
+
+    function openStoredCertFile(id) {
+      const item = courses.find(c => c.id === id);
+      if (!item || !item.certFile || !item.certFile.dataUrl) return;
+      const a = document.createElement("a");
+      a.href = item.certFile.dataUrl;
+      a.download = item.certFile.name || "certificado";
+      a.target = "_blank";
+      a.click();
+    }
+
+    function statusBadgeClass(status) {
+      if (status === "Concluído") return "bg-emerald-500/15 text-emerald-300 border-emerald-500/30";
+      if (status === "Em andamento") return "bg-sky-500/15 text-sky-300 border-sky-500/30";
+      return "bg-amber-500/15 text-amber-300 border-amber-500/30";
+    }
+
+    function updateStats() {
+      document.getElementById("statTotal").textContent = courses.length;
+      document.getElementById("statPending").textContent = courses.filter(c => c.status === "Pendente").length;
+      document.getElementById("statProgress").textContent = courses.filter(c => c.status === "Em andamento").length;
+      document.getElementById("statDone").textContent = courses.filter(c => c.status === "Concluído").length;
+    }
+
+    function renderCourses() {
+      updateStats();
+      const container = document.getElementById("coursesContainer");
+      const query = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+      const statusFilter = document.getElementById("statusFilter").value;
+
+      const list = courses.filter(c => {
+        if (statusFilter !== "all" && c.status !== statusFilter) return false;
+        if (query) {
+          const hay = [c.name, c.platform, c.notes, c.status].join(" ").toLowerCase();
+          if (!hay.includes(query)) return false;
+        }
+        return true;
+      });
+
+      if (!list.length) {
+        container.innerHTML = `
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-2">
+            <p class="text-sm font-semibold text-slate-300">Nenhum curso encontrado por aqui ainda.</p>
+            <p class="text-xs text-slate-500">Clique em "Novo Curso / Certificação" para cadastrar o primeiro.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(item => {
+        const showPass = revealedPasswords.has(item.id);
+        const passDisplay = item.password ? (showPass ? escapeHtml(item.password) : "••••••••") : "—";
+        const formattedDate = item.targetDate ? item.targetDate.split("-").reverse().join("/") : "";
+
+        return `
+          <div class="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 space-y-3 transition">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="space-y-1 flex-1 min-w-[240px]">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${statusBadgeClass(item.status)}">
+                    ${escapeHtml(item.status)} • ${item.progress}%
+                  </span>
+                  ${item.platform ? `<span class="text-[11px] font-semibold text-slate-300">${escapeHtml(item.platform)}</span>` : ""}
+                  ${item.hours ? `<span class="text-[11px] text-slate-400">• ${escapeHtml(item.hours)}h</span>` : ""}
+                  ${formattedDate ? `<span class="text-[11px] text-slate-400">• Data: ${escapeHtml(formattedDate)}</span>` : ""}
+                </div>
+                <h3 class="text-sm font-bold text-white">${escapeHtml(item.name)}</h3>
+                ${item.notes ? `<p class="text-xs text-slate-400 leading-relaxed">${escapeHtml(item.notes)}</p>` : ""}
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2 shrink-0">
+                ${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-3 py-1.5 rounded-lg transition">Acessar Curso ↗</a>` : ""}
+                ${item.certUrl ? `<a href="${escapeHtml(item.certUrl)}" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 px-3 py-1.5 rounded-lg transition">🏅 Certificado ↗</a>` : ""}
+                ${item.certFile ? `<button onclick="openStoredCertFile('${item.id}')" class="text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-lg cursor-pointer">📎 ${escapeHtml(item.certFile.name)}</button>` : ""}
+                <button onclick="openCourseModal('${item.id}')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1.5 rounded-lg cursor-pointer">Editar</button>
+                <button onclick="deleteCourse('${item.id}')" class="text-xs text-slate-500 hover:text-rose-400 px-2 py-1.5 cursor-pointer">✕</button>
+              </div>
+            </div>
+
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+              <div class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width: ${item.progress}%"></div>
+            </div>
+
+            ${(item.login || item.password) ? `
+              <div class="bg-slate-950/80 border border-slate-800/90 rounded-xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="flex flex-wrap items-center gap-4">
+                  ${item.login ? `<div><span class="text-slate-500">Login:</span> <span class="text-slate-200 font-medium">${escapeHtml(item.login)}</span></div>` : ""}
+                  ${item.password ? `<div><span class="text-slate-500">Senha:</span> <span class="text-slate-200 font-mono">${passDisplay}</span></div>` : ""}
+                </div>
+                <div class="flex items-center gap-2">
+                  ${item.login ? `<button onclick="copyText(${JSON.stringify(item.login)}, 'Login copiado!')" class="text-[11px] text-sky-400 hover:text-sky-300 font-semibold cursor-pointer">Copiar login</button>` : ""}
+                  ${item.password ? `
+                    <button onclick="togglePasswordVisibility('${item.id}')" class="text-[11px] text-slate-400 hover:text-white cursor-pointer">${showPass ? "Ocultar" : "Ver senha"}</button>
+                    <button onclick="copyText(${JSON.stringify(item.password)}, 'Senha copiada!')" class="text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold cursor-pointer">Copiar senha</button>
+                  ` : ""}
+                </div>
+              </div>
+            ` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+
+    init();
+  </script>
+</body>
+</html>
