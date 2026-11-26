@@ -1,4 +1,200 @@
-let courses = [];
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cursos & Certificações - Liza</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #090d16; color: #e2e8f0; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-slate-900/95 border-b border-slate-800 sticky top-0 z-30 backdrop-blur">
+    <div class="max-w-6xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <a href="../" class="text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 border border-slate-700 px-3 py-2 rounded-xl transition">
+          ← Hub
+        </a>
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-slate-950 font-bold text-lg">
+          🎓
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-white text-lg tracking-tight">Cursos & Certificações • Liza</h1>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              ☁️ Google Sheets
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">Trilhas de estudo, acessos, progresso e certificados</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2.5">
+        <button onclick="openCourseModal()" class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 transition cursor-pointer">
+          <span>➕</span> Novo Curso / Certificação
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6 space-y-5">
+
+    <!-- Resumo -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+        <p class="text-[11px] text-slate-400 font-medium">Total</p>
+        <p id="statTotal" class="text-2xl font-extrabold text-white mt-0.5">0</p>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+        <p class="text-[11px] text-amber-400 font-medium">Pendentes</p>
+        <p id="statPending" class="text-2xl font-extrabold text-amber-300 mt-0.5">0</p>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+        <p class="text-[11px] text-sky-400 font-medium">Em andamento</p>
+        <p id="statProgress" class="text-2xl font-extrabold text-sky-300 mt-0.5">0</p>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+        <p class="text-[11px] text-emerald-400 font-medium">Concluídos</p>
+        <p id="statDone" class="text-2xl font-extrabold text-emerald-300 mt-0.5">0</p>
+      </div>
+    </section>
+
+    <!-- Filtros -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+      <input type="text" id="searchInput" oninput="renderCourses()" placeholder="Buscar por curso, plataforma, área ou tag..." class="flex-1 min-w-[220px] bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+
+      <div class="flex flex-wrap items-center gap-2">
+        <select id="statusFilter" onchange="renderCourses()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+          <option value="all">Todos os status</option>
+          <option value="Pendente">Pendente</option>
+          <option value="Em andamento">Em andamento</option>
+          <option value="Concluído">Concluído</option>
+        </select>
+        <span id="syncStatus" class="text-xs text-slate-400 px-2">Pronto</span>
+      </div>
+    </section>
+
+    <!-- Lista -->
+    <section id="coursesContainer" class="space-y-3"></section>
+  </main>
+
+  <!-- Modal Cadastro / Edição -->
+  <div id="courseModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-40">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h2 id="modalTitle" class="text-sm font-bold text-white">➕ Adicionar Curso ou Certificação</h2>
+        <button onclick="closeCourseModal()" class="text-slate-400 hover:text-white text-sm px-2 py-1 rounded-lg bg-slate-800 cursor-pointer">✕</button>
+      </div>
+
+      <form id="courseForm" onsubmit="saveCourse(event)" class="space-y-4 text-xs">
+        <input type="hidden" id="courseId">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Nome do curso / certificação *</label>
+            <input type="text" id="courseName" required placeholder="Ex: PSPO I / ECBA / APIs & Mensageria" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Plataforma / Instituição</label>
+            <input type="text" id="coursePlatform" placeholder="Ex: Scrum.org, Udemy, Coursera, Alura" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Status</label>
+            <select id="courseStatus" onchange="onStatusChange()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+              <option value="Pendente">Pendente</option>
+              <option value="Em andamento">Em andamento</option>
+              <option value="Concluído">Concluído</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Progresso (<span id="progressValueLabel">0</span>%)</label>
+            <input type="range" id="courseProgress" min="0" max="100" step="5" value="0" oninput="onProgressChange()" class="w-full accent-emerald-500 mt-2">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Carga horária (h)</label>
+            <input type="number" id="courseHours" min="0" step="0.5" placeholder="Ex: 20" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Link do curso / certificação</label>
+            <input type="url" id="courseUrl" placeholder="https://..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Data alvo / conclusão</label>
+            <input type="date" id="courseTargetDate" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+        </div>
+
+        <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 space-y-3">
+          <p class="font-bold text-slate-200">🔐 Dados de acesso da plataforma</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-slate-400 font-semibold mb-1">Login / E-mail</label>
+              <input type="text" id="courseLogin" placeholder="seu@email.com ou usuário" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white">
+            </div>
+            <div>
+              <label class="block text-slate-400 font-semibold mb-1">Senha</label>
+              <input type="text" id="coursePassword" placeholder="Senha da plataforma" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white">
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 space-y-3">
+          <p class="font-bold text-slate-200">🏅 Certificado</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+            <div>
+              <label class="block text-slate-400 font-semibold mb-1">Link / URL do certificado ou credencial</label>
+              <input type="url" id="courseCertUrl" placeholder="https://credly.com/... ou link do certificado" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white">
+            </div>
+            <div>
+              <label class="block text-slate-400 font-semibold mb-1">Anexar arquivo (PDF / imagem)</label>
+              <input type="file" id="courseCertFile" accept=".pdf,.png,.jpg,.jpeg,.webp" onchange="handleCertFileSelect(event)" class="w-full text-[11px] text-slate-300 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-slate-800 file:text-emerald-300 file:font-semibold hover:file:bg-slate-700 cursor-pointer">
+            </div>
+          </div>
+          <div id="certFilePreview" class="hidden items-center justify-between bg-slate-900 border border-emerald-500/30 rounded-lg px-3 py-2">
+            <span id="certFileNameLabel" class="text-[11px] text-emerald-300 font-semibold truncate pr-2"></span>
+            <button type="button" onclick="clearCertFile()" class="text-[11px] text-rose-400 hover:text-rose-300 cursor-pointer">Remover arquivo</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Observações / tópicos principais</label>
+          <textarea id="courseNotes" rows="3" placeholder="Ex: foco em idempotência, métricas de produto, simulação de prova..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          <button type="button" onclick="closeCourseModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold cursor-pointer">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold cursor-pointer">
+            💾 Salvar Curso
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 border border-emerald-500/40 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl opacity-0 pointer-events-none transition-opacity duration-300 z-50"></div>
+
+  <script>
+    const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbzpgOsTtgMWsSAE5ypbLwGBHEoTXydMv5zQf5bi_ZiCHEHHsmK2nozOb8HFPZwlLrzxSw/exec";
+    const CLOUD_TOKEN = "LIZA_HUB_2026";
+    const STORAGE_KEY = "liza_hub_courses_v1";
+
+    let courses = [];
     let editingCertFile = null;
     const revealedPasswords = new Set();
 
